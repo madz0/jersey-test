@@ -28,7 +28,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.*;
 import static org.mockito.AdditionalMatchers.*;
 
-public class AccountServiceTest {
+public class AccountServiceUnitTest {
     private AccountService accountService;
     private AccountRepository accountRepository;
     private CurrencyService currencyService;
