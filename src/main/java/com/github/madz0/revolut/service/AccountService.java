@@ -75,6 +75,10 @@ public class AccountService {
         }
     }
 
+    public Page<Transfer> findAllTransfersByAccountId(Long accountId, int page, int pageSize) {
+        return transferRepository.findAllByAccountId(accountId, page, pageSize);
+    }
+
     private Transfer prepareTransferForSave(Transfer transfer, Account from, Account to, BigDecimal exchangeRate) {
         //Just to make sure!
         transfer.setId(null);

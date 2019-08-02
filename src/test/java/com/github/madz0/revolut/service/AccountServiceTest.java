@@ -14,16 +14,19 @@ import org.mockito.Mockito;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.*;
+import static org.mockito.AdditionalMatchers.*;
 
 public class AccountServiceTest {
     private AccountService accountService;
@@ -488,6 +491,79 @@ public class AccountServiceTest {
         Transfer transfer = new Transfer(from, to, new BigDecimal("2"), Currency.USD, Currency.EUR, null);
         accountService = new AccountService(accountRepository, mockEntityManagerTransaction(), currencyService, transferRepository);
         accountService.makeTransfer(transfer);
+    }
+
+    @Test
+    public void findAllTransfersByAccountIdTest() {
+        final long account1Id = 1;
+        final long account2Id = 2;
+        final long account3Id = 3;
+        transferRepository = mock(TransferRepository.class);
+        doAnswer(invocationOnMock -> {
+
+            long accountId = invocationOnMock.getArgument(0);
+            int page = invocationOnMock.getArgument(1);
+            int size = invocationOnMock.getArgument(2);
+            if (page < 0 || size <= 0) {
+                return invocationOnMock.callRealMethod();
+            } else {
+                Account account1 = new Account();
+                account1.setAmount(BigDecimal.TEN);
+                account1.setCurrency(Currency.USD);
+                account1.setId(account1Id);
+                Account account2 = new Account();
+                account2.setAmount(BigDecimal.TEN);
+                account2.setCurrency(Currency.EUR);
+                account2.setId(account2Id);
+                Account account3 = new Account();
+                account3.setAmount(BigDecimal.TEN);
+                account3.setCurrency(Currency.EUR);
+                account3.setId(account3Id);
+
+                Transfer transfer1 = new Transfer(account1, account2, BigDecimal.TEN, account1.getCurrency(), account2.getCurrency(), BigDecimal.ONE);
+                transfer1.setId(1L);
+                Transfer transfer2 = new Transfer(account1, account3, BigDecimal.ONE, account1.getCurrency(), account3.getCurrency(), BigDecimal.ONE);
+                transfer2.setId(2L);
+                Transfer transfer3 = new Transfer(account2, account3, BigDecimal.ONE, account2.getCurrency(), account3.getCurrency(), BigDecimal.ONE.add(BigDecimal.TEN));
+                transfer3.setId(3L);
+                List<Transfer> transferList = Stream.of(transfer1, transfer2, transfer3).filter(t -> t.getFromAccountId() == accountId || t.getToAccountId() == accountId).collect(Collectors.toList());
+                return new Page<>(transferList.subList(page, page + size), transferList.size(), page, size);
+            }
+        }).when(transferRepository).findAllByAccountId(or(eq(account1Id), eq(account2Id)), anyInt(), anyInt());
+        accountService = new AccountService(accountRepository, null, null, transferRepository);
+        int page = 0;
+        int pageSize = 2;
+        Page<Transfer> transferPage = accountService.findAllTransfersByAccountId(1L, page, pageSize);
+        assertNotNull(transferPage);
+        assertEquals(page, transferPage.getPage());
+        assertEquals(pageSize, transferPage.getPageSize());
+        assertEquals(2, transferPage.getTotalSize());
+        assertEquals(pageSize, transferPage.getContents().size());
+        assertEquals(1, (long) transferPage.getContents().get(0).getId());
+    }
+
+    @Test
+    public void findAllTransfersByAccountIdEmptyResultTest() {
+        transferRepository = mock(TransferRepository.class);
+        doAnswer(invocationOnMock -> {
+            int page = invocationOnMock.getArgument(1);
+            int size = invocationOnMock.getArgument(2);
+            if (page < 0 || size <= 0) {
+                return invocationOnMock.callRealMethod();
+            } else {
+                return new Page<Transfer>(Collections.emptyList(), 0, page, size);
+            }
+        }).when(transferRepository).findAllByAccountId(anyLong(), anyInt(), anyInt());
+        accountService = new AccountService(accountRepository, null, null, transferRepository);
+        int page = 0;
+        int pageSize = 2;
+        Page<Transfer> transferPage = accountService.findAllTransfersByAccountId(1L, page, pageSize);
+        assertNotNull(transferPage);
+        assertEquals(0, transferPage.getPage());
+        assertEquals(pageSize, transferPage.getPageSize());
+        assertEquals(0, transferPage.getTotalSize());
+        assertEquals(0, transferPage.getContents().size());
+        assertEquals(0, (long) transferPage.getContents().size());
     }
 
     private EntityManager mockEntityManagerTransaction() {
