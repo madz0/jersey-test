@@ -19,16 +19,18 @@ import java.time.ZoneId;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "transfers")
+@Table(name = "transfers", indexes = {@Index(name = "from_account_id", columnList = "from_account_id"), @Index(name = "to_account_id", columnList = "to_account_id")})
 public class Transfer extends BaseModel {
     public final static int EXCHANGE_RATE_MAX_DIGITS = 13;
     public final static int EXCHANGE_RATE_MAX_FRAGMENTS = 4;
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "from_account_id")
     private Account from;
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "to_account_id")
     private Account to;
 
     @Digits(integer = MAX_SUPPORTED_MONEY, fraction = MAX_SUPPORTED_MONEY_FRACTION, message = "Wrong value for money")
