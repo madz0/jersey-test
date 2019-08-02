@@ -3,6 +3,7 @@ package com.github.madz0.revolut.repository;
 import com.github.madz0.revolut.model.Account;
 
 import javax.persistence.EntityManager;
+import java.util.List;
 import java.util.Optional;
 
 public class AccountRepositoryImpl extends AbstractRepository<Account> implements AccountRepository {
@@ -19,5 +20,22 @@ public class AccountRepositoryImpl extends AbstractRepository<Account> implement
             throw new IllegalArgumentException("id");
         }
         return Optional.ofNullable(entityManager.find(Account.class, id));
+    }
+
+    @Override
+    public Page<Account> findAll(int page, int size) {
+        if (page < 0) {
+            throw new IllegalArgumentException("page<0");
+        }
+        if (size <= 0) {
+            throw new IllegalArgumentException("size<=0");
+        }
+
+        long totalSize = (long) entityManager.createQuery("select count (a.id) from Account a").getSingleResult();
+        List<Account> accounts = entityManager.createQuery("select a from Account a", Account.class)
+                .setFirstResult(page * size)
+                .setMaxResults(size)
+                .getResultList();
+        return new Page<>(accounts, totalSize, page, size);
     }
 }
