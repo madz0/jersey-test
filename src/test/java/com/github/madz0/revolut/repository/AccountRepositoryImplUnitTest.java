@@ -1,5 +1,6 @@
 package com.github.madz0.revolut.repository;
 
+import com.github.madz0.revolut.AbstractUnitTest;
 import com.github.madz0.revolut.model.Account;
 import com.github.madz0.revolut.model.Currency;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,13 +17,13 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-class AccountRepositoryImplUnitTest {
+class AccountRepositoryImplUnitTest extends AbstractUnitTest {
     private EntityManager entityManager;
     private AccountRepository accountRepository;
 
     @BeforeEach
     public void beforeClass() {
-        mockEntityManagerTransaction();
+        entityManager = mockEntityManagerTransaction();
     }
 
     @Test
@@ -42,11 +43,8 @@ class AccountRepositoryImplUnitTest {
     @Test
     void findByIdWith_nullId_shouldThrowIllegalArgumentException() {
         accountRepository = new AccountRepositoryImpl(entityManager);
-        assertThrows(IllegalArgumentException.class, () -> {
-            accountRepository.findById(null);
-        });
+        assertThrows(IllegalArgumentException.class, () -> accountRepository.findById(null));
     }
-
 
     @Test
     void findAll() {
@@ -117,13 +115,5 @@ class AccountRepositoryImplUnitTest {
             accountRepository = new AccountRepositoryImpl(entityManager);
             accountRepository.findForUpdateById(null);
         });
-    }
-
-    private void mockEntityManagerTransaction() {
-        EntityTransaction transaction = mock(EntityTransaction.class);
-        doNothing().when(transaction).commit();
-        doNothing().when(transaction).rollback();
-        entityManager = mock(EntityManager.class);
-        doReturn(transaction).when(entityManager).getTransaction();
     }
 }

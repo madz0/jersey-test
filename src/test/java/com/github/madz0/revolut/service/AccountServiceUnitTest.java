@@ -1,5 +1,6 @@
 package com.github.madz0.revolut.service;
 
+import com.github.madz0.revolut.AbstractUnitTest;
 import com.github.madz0.revolut.exception.ExternalServiceException;
 import com.github.madz0.revolut.model.Account;
 import com.github.madz0.revolut.model.BaseModel;
@@ -12,8 +13,6 @@ import com.github.madz0.revolut.repository.TransferRepository;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityTransaction;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -25,10 +24,10 @@ import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.mockito.AdditionalMatchers.or;
 import static org.mockito.Mockito.*;
-import static org.mockito.AdditionalMatchers.*;
 
-public class AccountServiceUnitTest {
+public class AccountServiceUnitTest extends AbstractUnitTest {
     private AccountService accountService;
     private AccountRepository accountRepository;
     private CurrencyService currencyService;
@@ -564,13 +563,5 @@ public class AccountServiceUnitTest {
         assertEquals(0, transferPage.getTotalSize());
         assertEquals(0, transferPage.getContents().size());
         assertEquals(0, (long) transferPage.getContents().size());
-    }
-
-    private EntityManager mockEntityManagerTransaction() {
-        EntityTransaction transaction = mock(EntityTransaction.class);
-        doNothing().when(transaction).commit();
-        EntityManager entityManager = mock(EntityManager.class);
-        doReturn(transaction).when(entityManager).getTransaction();
-        return entityManager;
     }
 }

@@ -9,7 +9,7 @@ import javax.persistence.EntityTransaction;
 
 @RequiredArgsConstructor
 public abstract class AbstractRepository<T extends BaseModel> {
-    final EntityManager entityManager;
+    protected final EntityManager entityManager;
 
     public T save(T entity) {
         if (entity == null) {

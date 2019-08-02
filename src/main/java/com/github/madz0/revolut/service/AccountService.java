@@ -42,6 +42,7 @@ public class AccountService {
         assertTransferIllegalFields(transfer);
         EntityTransaction transaction = entityManager.getTransaction();
         try {
+            transaction.begin();
             Account from = accountRepository.findForUpdateById(transfer.getFromAccountId()).orElseThrow(() -> new IllegalArgumentException("transfer from id " + transfer.getFromAccountId() + " was invalid"));
             Account to = accountRepository.findForUpdateById(transfer.getToAccountId()).orElseThrow(() -> new IllegalArgumentException("transfer destination id " + transfer.getToAccountId() + " was invalid"));
             //Check if from's account is sufficient for requested amount of transfer
