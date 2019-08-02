@@ -32,7 +32,10 @@ public class AccountRepositoryImpl extends AbstractRepository<Account> implement
             throw new IllegalArgumentException("size<=0");
         }
 
-        long totalSize = (long) entityManager.createQuery("select count (a.id) from Account a").getSingleResult();
+        long totalSize = entityManager.createQuery("select count (a.id) from Account a", Long.class).getSingleResult();
+        if (page * size >= totalSize) {
+            throw new IllegalArgumentException("page value is bigger than result set size");
+        }
         List<Account> accounts = entityManager.createQuery("select a from Account a", Account.class)
                 .setFirstResult(page * size)
                 .setMaxResults(size)

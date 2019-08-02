@@ -25,6 +25,9 @@ public class TransferRepositoryImpl extends AbstractRepository<Transfer> impleme
         long totalSize = (long) entityManager.createQuery("select count (t.id) from Transfer t where t.from.id = :accountId or t.to.id = :accountId")
                 .setParameter("accountId", accountId)
                 .getSingleResult();
+        if (page * size >= totalSize) {
+            throw new IllegalArgumentException("page value is bigger than result set size");
+        }
         List<Transfer> accounts = entityManager.createQuery("select t from Transfer t where t.from.id = :accountId or t.to.id = :accountId", Transfer.class)
                 .setParameter("accountId", accountId)
                 .setFirstResult(page * size)
