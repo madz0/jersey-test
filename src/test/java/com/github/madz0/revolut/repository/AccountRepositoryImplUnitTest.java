@@ -87,6 +87,31 @@ class AccountRepositoryImplUnitTest {
     }
 
     @Test
+    void findAllWrongPageSize_shouldThrowIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            accountRepository = new AccountRepositoryImpl(entityManager);
+            int page = 0;
+            int pageSize = 0;
+            accountRepository.findAll(page, pageSize);
+        });
+    }
+
+    @Test
+    void findAllBiggerPageThanTotalSize_shouldThrowIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            final TypedQueryMocked<Long> queryMockedTotalSize = new TypedQueryMocked<>();
+            doAnswer(invocationOnMock -> {
+                queryMockedTotalSize.setResultSet(Collections.singletonList(3L));
+                return queryMockedTotalSize;
+            }).when(entityManager).createQuery(eq("select count (a.id) from Account a"), eq(Long.class));
+            accountRepository = new AccountRepositoryImpl(entityManager);
+            int page = 1;
+            int pageSize = 3;
+            accountRepository.findAll(page, pageSize);
+        });
+    }
+
+    @Test
     void findForUpdateById() {
     }
 
