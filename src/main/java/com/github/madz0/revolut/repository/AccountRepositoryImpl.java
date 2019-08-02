@@ -47,12 +47,4 @@ public class AccountRepositoryImpl extends AbstractRepository<Account> implement
         }
         return Optional.ofNullable(entityManager.find(Account.class, id, LockModeType.PESSIMISTIC_WRITE));
     }
-
-    @Override
-    public Optional<Account> findForSharedById(Long id) {
-        if (id == null || id <= 0) {
-            throw new IllegalArgumentException("id");
-        }
-        return Optional.ofNullable(entityManager.find(Account.class, id, LockModeType.PESSIMISTIC_READ));
-    }
 }

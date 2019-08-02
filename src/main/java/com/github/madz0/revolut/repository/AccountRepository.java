@@ -9,5 +9,4 @@ public interface AccountRepository {
     Optional<Account> findById(Long id);
     Page<Account> findAll(int page, int size);
     Optional<Account> findForUpdateById(Long id);
-    Optional<Account> findForSharedById(Long id);
 }
