@@ -22,7 +22,7 @@ public class Main {
         Context context = tomcat.addWebapp("/", new File(".").getAbsolutePath());
 
         Tomcat.addServlet(context, "jersey-container-servlet", resourceConfig());
-        context.addServletMapping("/*", "jersey-container-servlet");
+        //context.addServletMapping("/*", "jersey-container-servlet");
 
         tomcat.start();
         tomcat.getServer().await();

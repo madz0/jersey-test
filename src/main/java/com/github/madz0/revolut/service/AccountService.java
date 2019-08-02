@@ -19,6 +19,7 @@ import static com.github.madz0.revolut.util.CurrencyUtils.getFractionsCount;
 
 @RequiredArgsConstructor
 public class AccountService {
+    private final static int DEFAULT_PAGE_SIZE = 20;
     private final AccountRepository accountRepository;
     private final EntityManager entityManager;
     private final CurrencyService currencyService;
@@ -35,6 +36,9 @@ public class AccountService {
     }
 
     public Page<Account> findAll(int page, int pageSize) {
+        if (pageSize == 0) {
+            pageSize = DEFAULT_PAGE_SIZE;
+        }
         return accountRepository.findAll(page, pageSize);
     }
 
@@ -53,13 +57,7 @@ public class AccountService {
             if (from.getCurrency() != to.getCurrency()) {
                 try {
                     exchangeRate = currencyService.getExchangeRateOf(from.getCurrency(), to.getCurrency());
-                    if (exchangeRate == null) {
-                        throw new ExternalServiceException("service null return", null);
-                    }
-                    if (getDigitsCount(exchangeRate) > Transfer.EXCHANGE_RATE_MAX_DIGITS ||
-                            getFractionsCount(exchangeRate) > Transfer.EXCHANGE_RATE_MAX_FRAGMENTS) {
-                        throw new UnsupportedOperationException("Returned exchange rate was too big " + exchangeRate);
-                    }
+                    assertReceivedExchangeRate(exchangeRate);
                 } catch (Exception e) {
                     throw new ExternalServiceException("Currency service call exception converting " + from.getCurrency() + ", to " + to.getCurrency(), e);
                 }
@@ -77,6 +75,9 @@ public class AccountService {
     }
 
     public Page<Transfer> findAllTransfersByAccountId(Long accountId, int page, int pageSize) {
+        if (pageSize == 0) {
+            pageSize = DEFAULT_PAGE_SIZE;
+        }
         return transferRepository.findAllByAccountId(accountId, page, pageSize);
     }
 
@@ -137,6 +138,16 @@ public class AccountService {
         }
         if (account.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Account amount equals or smaller than 0");
+        }
+    }
+
+    private void assertReceivedExchangeRate(BigDecimal exchangeRate) {
+        if (exchangeRate == null) {
+            throw new ExternalServiceException("service null return", null);
+        }
+        if (getDigitsCount(exchangeRate) > Transfer.EXCHANGE_RATE_MAX_DIGITS ||
+                getFractionsCount(exchangeRate) > Transfer.EXCHANGE_RATE_MAX_FRAGMENTS) {
+            throw new UnsupportedOperationException("Returned exchange rate was too big " + exchangeRate);
         }
     }
 }

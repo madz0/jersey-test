@@ -140,7 +140,7 @@ public class AccountServiceUnitTest extends AbstractUnitTest {
     public void findAllWithWrongPageSizeTest_shouldThrowIllegalArgException() {
         accountRepository = new AccountRepositoryImpl(null);
         accountService = new AccountService(accountRepository, null, null, null);
-        accountService.findAll(0, 0);
+        accountService.findAll(0, -1);
     }
 
     @Test(expected = IllegalArgumentException.class)

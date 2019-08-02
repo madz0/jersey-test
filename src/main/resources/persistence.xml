@@ -18,6 +18,7 @@
             <property name="hibernate.hikari.minimumIdle" value="10" />
             <property name="hibernate.hikari.maximumPoolSize" value="20" />
             <property name="hibernate.hikari.idleTimeout" value="300000" />
+            <property name="hibernate.hikari.transactionIsolation" value="TRANSACTION_REPEATABLE_READ" />
             <property name="show_sql" value="true"/>
             <property name="hibernate.temp.use_jdbc_metadata_defaults" value="false"/>
         </properties>
