@@ -86,7 +86,7 @@ public class TypedQueryMocked<X> implements TypedQuery<X> {
 
     @Override
     public TypedQuery<X> setParameter(String s, Object o) {
-        return null;
+        return this;
     }
 
     @Override

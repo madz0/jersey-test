@@ -22,7 +22,7 @@ public class TransferRepositoryImpl extends AbstractRepository<Transfer> impleme
             throw new IllegalArgumentException("accountId<=0");
         }
 
-        long totalSize = (long) entityManager.createQuery("select count (t.id) from Transfer t where t.from.id = :accountId or t.to.id = :accountId")
+        long totalSize = entityManager.createQuery("select count (t.id) from Transfer t where t.from.id = :accountId or t.to.id = :accountId", Long.class)
                 .setParameter("accountId", accountId)
                 .getSingleResult();
         if (page * size >= totalSize) {

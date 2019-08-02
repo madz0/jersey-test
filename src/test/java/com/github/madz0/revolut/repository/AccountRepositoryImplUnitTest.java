@@ -7,7 +7,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import javax.persistence.EntityManager;
-import javax.persistence.EntityTransaction;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collections;
