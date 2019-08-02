@@ -21,7 +21,11 @@ public class AccountRepositoryImpl extends AbstractRepository<Account> implement
         if (id == null || id <= 0) {
             throw new IllegalArgumentException("id");
         }
-        return Optional.ofNullable(entityManager.find(Account.class, id));
+        try {
+            return Optional.ofNullable(entityManager.find(Account.class, id));
+        } catch (Exception e) {
+            throw new DbQueryException("Failed to execute find query. id=" + id, e);
+        }
     }
 
     @Override
@@ -43,12 +47,12 @@ public class AccountRepositoryImpl extends AbstractRepository<Account> implement
         if (page * size >= totalSize) {
             throw new IllegalArgumentException("page value is bigger than result set size");
         }
-        try{
-        List<Account> accounts = entityManager.createQuery("select a from Account a", Account.class)
-                .setFirstResult(page * size)
-                .setMaxResults(size)
-                .getResultList();
-        return new Page<>(accounts, totalSize, page, size);
+        try {
+            List<Account> accounts = entityManager.createQuery("select a from Account a", Account.class)
+                    .setFirstResult(page * size)
+                    .setMaxResults(size)
+                    .getResultList();
+            return new Page<>(accounts, totalSize, page, size);
         } catch (Exception e) {
             throw new DbQueryException("Failed to execute list query. page=" + page + ", size=" + size + ", totalSize=" + totalSize, e);
         }
@@ -59,6 +63,10 @@ public class AccountRepositoryImpl extends AbstractRepository<Account> implement
         if (id == null || id <= 0) {
             throw new IllegalArgumentException("id");
         }
-        return Optional.ofNullable(entityManager.find(Account.class, id, LockModeType.PESSIMISTIC_WRITE));
+        try {
+            return Optional.ofNullable(entityManager.find(Account.class, id, LockModeType.PESSIMISTIC_WRITE));
+        } catch (Exception e) {
+            throw new DbQueryException("Failed to execute find query. id=" + id, e);
+        }
     }
 }
