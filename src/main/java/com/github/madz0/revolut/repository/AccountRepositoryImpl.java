@@ -1,5 +1,6 @@
 package com.github.madz0.revolut.repository;
 
+import com.github.madz0.revolut.exception.DbQueryException;
 import com.github.madz0.revolut.model.Account;
 
 import javax.persistence.EntityManager;
@@ -32,15 +33,25 @@ public class AccountRepositoryImpl extends AbstractRepository<Account> implement
             throw new IllegalArgumentException("size<=0");
         }
 
-        long totalSize = entityManager.createQuery("select count (a.id) from Account a", Long.class).getSingleResult();
+        long totalSize;
+        try {
+            totalSize = entityManager.createQuery("select count (a.id) from Account a", Long.class).getSingleResult();
+        } catch (Exception e) {
+            throw new DbQueryException("Failed to execute count query", e);
+        }
+
         if (page * size >= totalSize) {
             throw new IllegalArgumentException("page value is bigger than result set size");
         }
+        try{
         List<Account> accounts = entityManager.createQuery("select a from Account a", Account.class)
                 .setFirstResult(page * size)
                 .setMaxResults(size)
                 .getResultList();
         return new Page<>(accounts, totalSize, page, size);
+        } catch (Exception e) {
+            throw new DbQueryException("Failed to execute list query. page=" + page + ", size=" + size + ", totalSize=" + totalSize, e);
+        }
     }
 
     @Override

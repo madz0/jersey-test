@@ -1,6 +1,7 @@
 package com.github.madz0.revolut.repository;
 
 import com.github.madz0.revolut.AbstractUnitTest;
+import com.github.madz0.revolut.exception.DbQueryException;
 import com.github.madz0.revolut.model.Account;
 import com.github.madz0.revolut.model.Currency;
 import com.github.madz0.revolut.model.Transfer;
@@ -14,10 +15,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.*;
 
 class TransferRepositoryImplUnitTest extends AbstractUnitTest {
     private EntityManager entityManager;
@@ -76,5 +76,36 @@ class TransferRepositoryImplUnitTest extends AbstractUnitTest {
         assertEquals(2, transferPage.getTotalSize());
         assertEquals(pageSize, transferPage.getContents().size());
         assertEquals(1, (long) transferPage.getContents().get(0).getId());
+    }
+
+    @Test
+    void findAll_wrongPageSize_shouldThrowIllegalArgumentException() {
+        TransferRepository transferRepository = new TransferRepositoryImpl(entityManager);
+        int page = 0;
+        int pageSize = 0;
+        assertThrows(IllegalArgumentException.class, () -> transferRepository.findAllByAccountId(1L, page, pageSize));
+    }
+
+    @Test
+    void findAll_ExceptionInCountQuery_shouldThrowDbQueryException() {
+        TransferRepository transferRepository = new TransferRepositoryImpl(entityManager);
+        int page = 0;
+        int pageSize = 2;
+        doThrow(RuntimeException.class).when(entityManager).createQuery(eq("select count (t.id) from Transfer t where t.from.id = :accountId or t.to.id = :accountId"), eq(Long.class));
+        assertThrows(DbQueryException.class, () -> transferRepository.findAllByAccountId(1L, page, pageSize));
+    }
+
+    @Test
+    void findAll_ExceptionInListQuery_shouldThrowDbQueryException() {
+        TransferRepository transferRepository = new TransferRepositoryImpl(entityManager);
+        int page = 0;
+        int pageSize = 2;
+        doAnswer(invocationOnMock -> {
+            TypedQueryMocked<Long> queryMockedTotalSize = new TypedQueryMocked<>();
+            queryMockedTotalSize.setResultSet(Collections.singletonList(2L));
+            return queryMockedTotalSize;
+        }).when(entityManager).createQuery(eq("select count (t.id) from Transfer t where t.from.id = :accountId or t.to.id = :accountId"), eq(Long.class));
+        doThrow(RuntimeException.class).when(entityManager).createQuery(eq("select t from Transfer t where t.from.id = :accountId or t.to.id = :accountId"), eq(Transfer.class));
+        assertThrows(DbQueryException.class, () -> transferRepository.findAllByAccountId(1L, page, pageSize));
     }
 }
