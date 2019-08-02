@@ -51,12 +51,20 @@ public class AccountService {
             if (from.getCurrency() != to.getCurrency()) {
                 try {
                     exchangeRate = currencyService.getExchangeRateOf(from.getCurrency(), to.getCurrency());
+                    if (exchangeRate == null) {
+                        throw new ExternalServiceException("service null return", null);
+                    }
+                    if (getDigitsCount(exchangeRate) > Transfer.EXCHANGE_RATE_MAX_DIGITS ||
+                            getFractionsCount(exchangeRate) > Transfer.EXCHANGE_RATE_MAX_FRAGMENTS) {
+                        throw new UnsupportedOperationException("Returned exchange rate was too big " + exchangeRate);
+                    }
                 } catch (Exception e) {
                     throw new ExternalServiceException("Currency service call exception converting " + from.getCurrency() + ", to " + to.getCurrency(), e);
                 }
             }
+            BigDecimal toAdd = calculateToAddAmount(to.getAmount(), transfer.getAmount(), exchangeRate);
             from.setAmount(from.getAmount().subtract(transfer.getAmount()));
-            to.setAmount(to.getAmount().add(transfer.getAmount().multiply(exchangeRate)));
+            to.setAmount(toAdd);
             Transfer dbTransfer = transferRepository.save(prepareTransferForSave(transfer, from, to, exchangeRate));
             transaction.commit();
             return dbTransfer;
@@ -103,5 +111,14 @@ public class AccountService {
         if (getFractionsCount(bigDecimal) > BaseModel.MAX_SUPPORTED_MONEY_FRACTION) {
             throw new IllegalArgumentException("transfer amount is bigger than allocated size");
         }
+    }
+
+    private BigDecimal calculateToAddAmount(BigDecimal current, BigDecimal transfered, BigDecimal exchangeRate) {
+        BigDecimal toAdd = current.add(transfered.multiply(exchangeRate));
+        if (getDigitsCount(toAdd) > Account.MAX_SUPPORTED_MONEY + Account.SUPPORTED_MONEY_SAFE_GUARD ||
+                getFractionsCount(toAdd) > Account.MAX_SUPPORTED_MONEY_FRACTION) {
+            throw new UnsupportedOperationException("Calculated money is too big " + toAdd);
+        }
+        return toAdd;
     }
 }

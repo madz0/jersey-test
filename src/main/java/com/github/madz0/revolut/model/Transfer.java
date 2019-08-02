@@ -21,6 +21,8 @@ import java.time.ZoneId;
 @Entity
 @Table(name = "transfers")
 public class Transfer extends BaseModel {
+    public final static int EXCHANGE_RATE_MAX_DIGITS = 13;
+    public final static int EXCHANGE_RATE_MAX_FRAGMENTS = 4;
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     private Account from;
@@ -39,7 +41,7 @@ public class Transfer extends BaseModel {
     @Enumerated(EnumType.STRING)
     private Currency toCurrency;
 
-    @Column(columnDefinition = "DECIMAL(13, 4)", nullable = false)
+    @Column(columnDefinition = "DECIMAL(" + EXCHANGE_RATE_MAX_DIGITS + ", " + EXCHANGE_RATE_MAX_FRAGMENTS + ")", nullable = false)
     private BigDecimal exchangeRate;
 
     @JsonGetter("destinationAmount")

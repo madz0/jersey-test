@@ -1,5 +1,6 @@
 package com.github.madz0.revolut.service;
 
+import com.github.madz0.revolut.exception.ExternalServiceException;
 import com.github.madz0.revolut.model.Account;
 import com.github.madz0.revolut.model.BaseModel;
 import com.github.madz0.revolut.model.Currency;
@@ -14,6 +15,7 @@ import org.mockito.Mockito;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -341,6 +343,117 @@ public class AccountServiceTest {
         doReturn(Optional.empty()).when(accountRepository).findForUpdateById(eq(toInDb.getId()));
 
         Transfer transfer = new Transfer(from, to, BigDecimal.TEN, Currency.USD, Currency.EUR, null);
+        accountService = new AccountService(accountRepository, mockEntityManagerTransaction(), currencyService, transferRepository);
+        accountService.makeTransfer(transfer);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void makeTransferWithInsufficientMoneyInSenderAccountTest_shouldThrowsIllegalArg() {
+        BigDecimal fromOriginalAmount = BigDecimal.ONE;
+        BigDecimal toOriginalAmount = BigDecimal.TEN;
+        final Account fromInDb = new Account();
+        fromInDb.setId(1L);
+        fromInDb.setAmount(fromOriginalAmount);
+        fromInDb.setCurrency(Currency.USD);
+
+        final Account toInDb = new Account();
+        toInDb.setId(2L);
+        toInDb.setAmount(toOriginalAmount);
+        toInDb.setCurrency(Currency.EUR);
+
+        Account from = new Account();
+        from.setId(fromInDb.getId());
+        Account to = new Account();
+        to.setId(toInDb.getId());
+
+        accountRepository = mock(AccountRepository.class);
+        doReturn(Optional.of(fromInDb)).when(accountRepository).findForUpdateById(eq(fromInDb.getId()));
+        doReturn(Optional.of(toInDb)).when(accountRepository).findForUpdateById(eq(toInDb.getId()));
+
+        Transfer transfer = new Transfer(from, to, BigDecimal.TEN, Currency.USD, Currency.EUR, null);
+        accountService = new AccountService(accountRepository, mockEntityManagerTransaction(), currencyService, transferRepository);
+        accountService.makeTransfer(transfer);
+    }
+
+    @Test(expected = ExternalServiceException.class)
+    public void makeTransferWithTooBigExchangeRateTest_shouldThrowExternalServiceException() {
+        BigDecimal fromOriginalAmount = new BigDecimal(BigInteger.ONE);
+        BigDecimal toOriginalAmount = BigDecimal.TEN;
+        final Account fromInDb = new Account();
+        fromInDb.setId(1L);
+        fromInDb.setAmount(fromOriginalAmount);
+        fromInDb.setCurrency(Currency.USD);
+
+        final Account toInDb = new Account();
+        toInDb.setId(2L);
+        toInDb.setAmount(toOriginalAmount);
+        toInDb.setCurrency(Currency.EUR);
+
+        Account from = new Account();
+        from.setId(fromInDb.getId());
+        Account to = new Account();
+        to.setId(toInDb.getId());
+
+        StringBuilder number = new StringBuilder();
+        for (int i = 0; i <= Transfer.EXCHANGE_RATE_MAX_DIGITS; i++) {
+            number.append("9");
+        }
+
+        BigDecimal exchangeRateFromUsdToEur = new BigDecimal(number.toString());
+        currencyService = mock(CurrencyService.class);
+        doReturn(exchangeRateFromUsdToEur).when(currencyService).getExchangeRateOf(eq(Currency.USD), eq(Currency.EUR));
+
+        accountRepository = mock(AccountRepository.class);
+        doReturn(Optional.of(fromInDb)).when(accountRepository).findForUpdateById(eq(fromInDb.getId()));
+        doReturn(Optional.of(toInDb)).when(accountRepository).findForUpdateById(eq(toInDb.getId()));
+
+        Transfer transfer = new Transfer(from, to, new BigDecimal("1"), Currency.USD, Currency.EUR, null);
+        accountService = new AccountService(accountRepository, mockEntityManagerTransaction(), currencyService, transferRepository);
+        accountService.makeTransfer(transfer);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void makeTransferWithBigAmountAccountTest_shouldThrowUnsupportedOperation() {
+        StringBuilder number = new StringBuilder();
+        for (int i = 0; i < BaseModel.MAX_SUPPORTED_MONEY + BaseModel.SUPPORTED_MONEY_SAFE_GUARD; i++) {
+            number.append("9");
+        }
+        BigDecimal fromOriginalAmount = new BigDecimal(number.toString());
+        BigDecimal toOriginalAmount = BigDecimal.TEN;
+        final Account fromInDb = new Account();
+        fromInDb.setId(1L);
+        fromInDb.setAmount(fromOriginalAmount);
+        fromInDb.setCurrency(Currency.USD);
+
+        final Account toInDb = new Account();
+        toInDb.setId(2L);
+        toInDb.setAmount(toOriginalAmount);
+        toInDb.setCurrency(Currency.EUR);
+
+        Account from = new Account();
+        from.setId(fromInDb.getId());
+        Account to = new Account();
+        to.setId(toInDb.getId());
+
+        number = new StringBuilder();
+        for (int i = 0; i < Transfer.EXCHANGE_RATE_MAX_DIGITS; i++) {
+            number.append("9");
+        }
+
+        BigDecimal exchangeRateFromUsdToEur = new BigDecimal(number.toString());
+        currencyService = mock(CurrencyService.class);
+        doReturn(exchangeRateFromUsdToEur).when(currencyService).getExchangeRateOf(eq(Currency.USD), eq(Currency.EUR));
+
+        accountRepository = mock(AccountRepository.class);
+        doReturn(Optional.of(fromInDb)).when(accountRepository).findForUpdateById(eq(fromInDb.getId()));
+        doReturn(Optional.of(toInDb)).when(accountRepository).findForUpdateById(eq(toInDb.getId()));
+
+        number = new StringBuilder();
+        for (int i = 0; i < BaseModel.MAX_SUPPORTED_MONEY; i++) {
+            number.append("9");
+        }
+
+        Transfer transfer = new Transfer(from, to, new BigDecimal(number.toString()), Currency.USD, Currency.EUR, null);
         accountService = new AccountService(accountRepository, mockEntityManagerTransaction(), currencyService, transferRepository);
         accountService.makeTransfer(transfer);
     }
