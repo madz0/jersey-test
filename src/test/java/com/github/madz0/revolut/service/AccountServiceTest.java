@@ -14,6 +14,7 @@ import org.mockito.Mockito;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -454,6 +455,37 @@ public class AccountServiceTest {
         }
 
         Transfer transfer = new Transfer(from, to, new BigDecimal(number.toString()), Currency.USD, Currency.EUR, null);
+        accountService = new AccountService(accountRepository, mockEntityManagerTransaction(), currencyService, transferRepository);
+        accountService.makeTransfer(transfer);
+    }
+
+    @Test(expected = ExternalServiceException.class)
+    public void makeTransferWhenExternalServiceFailsTest_shouldThrowExternalServiceException() {
+        BigDecimal fromOriginalAmount = new BigDecimal("10");
+        BigDecimal toOriginalAmount = BigDecimal.TEN;
+        final Account fromInDb = new Account();
+        fromInDb.setId(1L);
+        fromInDb.setAmount(fromOriginalAmount);
+        fromInDb.setCurrency(Currency.USD);
+
+        final Account toInDb = new Account();
+        toInDb.setId(2L);
+        toInDb.setAmount(toOriginalAmount);
+        toInDb.setCurrency(Currency.EUR);
+
+        Account from = new Account();
+        from.setId(fromInDb.getId());
+        Account to = new Account();
+        to.setId(toInDb.getId());
+
+        currencyService = mock(CurrencyService.class);
+        doThrow(RuntimeException.class).when(currencyService).getExchangeRateOf(eq(Currency.USD), eq(Currency.EUR));
+
+        accountRepository = mock(AccountRepository.class);
+        doReturn(Optional.of(fromInDb)).when(accountRepository).findForUpdateById(eq(fromInDb.getId()));
+        doReturn(Optional.of(toInDb)).when(accountRepository).findForUpdateById(eq(toInDb.getId()));
+
+        Transfer transfer = new Transfer(from, to, new BigDecimal("2"), Currency.USD, Currency.EUR, null);
         accountService = new AccountService(accountRepository, mockEntityManagerTransaction(), currencyService, transferRepository);
         accountService.makeTransfer(transfer);
     }
