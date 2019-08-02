@@ -40,7 +40,7 @@ class AccountRepositoryImplUnitTest {
     }
 
     @Test
-    void findByIdWithNullId_shouldThrowIllegalArgumentException() {
+    void findByIdWith_nullId_shouldThrowIllegalArgumentException() {
         accountRepository = new AccountRepositoryImpl(entityManager);
         assertThrows(IllegalArgumentException.class, () -> {
             accountRepository.findById(null);
@@ -87,7 +87,7 @@ class AccountRepositoryImplUnitTest {
     }
 
     @Test
-    void findAllWrongPageSize_shouldThrowIllegalArgumentException() {
+    void findAll_wrongPageSize_shouldThrowIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class, () -> {
             accountRepository = new AccountRepositoryImpl(entityManager);
             int page = 0;
@@ -97,7 +97,7 @@ class AccountRepositoryImplUnitTest {
     }
 
     @Test
-    void findAllBiggerPageThanTotalSize_shouldThrowIllegalArgumentException() {
+    void findAll_biggerPageThanTotalSize_shouldThrowIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class, () -> {
             final TypedQueryMocked<Long> queryMockedTotalSize = new TypedQueryMocked<>();
             doAnswer(invocationOnMock -> {
@@ -112,7 +112,11 @@ class AccountRepositoryImplUnitTest {
     }
 
     @Test
-    void findForUpdateById() {
+    void findForUpdateById_nullId_shouldThrowIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            accountRepository = new AccountRepositoryImpl(entityManager);
+            accountRepository.findForUpdateById(null);
+        });
     }
 
     private void mockEntityManagerTransaction() {
