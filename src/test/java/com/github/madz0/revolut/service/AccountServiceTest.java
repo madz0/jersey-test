@@ -2,24 +2,30 @@ package com.github.madz0.revolut.service;
 
 import com.github.madz0.revolut.model.Account;
 import com.github.madz0.revolut.model.Currency;
+import com.github.madz0.revolut.model.Transfer;
 import com.github.madz0.revolut.repository.AccountRepository;
+import com.github.madz0.revolut.repository.AccountRepositoryImpl;
 import com.github.madz0.revolut.repository.Page;
-import org.junit.Assert;
+import com.github.madz0.revolut.repository.TransferRepository;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import javax.persistence.EntityManager;
+import javax.persistence.EntityTransaction;
 import java.math.BigDecimal;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.*;
 
 public class AccountServiceTest {
-    AccountService accountService;
-    AccountRepository accountRepository;
+    private AccountService accountService;
+    private AccountRepository accountRepository;
+    private CurrencyService currencyService;
+    private TransferRepository transferRepository;
 
     @Test
     public void getAccountByIdTest() {
@@ -37,10 +43,17 @@ public class AccountServiceTest {
                 return Optional.of(account);
             }
         }).when(accountRepository).findById(Mockito.anyLong());
-        accountService = new AccountService(accountRepository);
+        accountService = new AccountService(accountRepository, null, null, null);
         Account savedAccount = accountService.findById(generatedId);
         assertNotNull(savedAccount);
         assertEquals(generatedId, (long) savedAccount.getId());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void getAccountByIdWrongIdTest_shouldReceivesIllegalArgException() {
+        accountRepository = new AccountRepositoryImpl(null);
+        accountService = new AccountService(accountRepository, null, null, null);
+        accountService.findById(null);
     }
 
     @Test
@@ -56,13 +69,27 @@ public class AccountServiceTest {
                 return acc;
             }
         }).when(accountRepository).save(Mockito.any(Account.class));
-        accountService = new AccountService(accountRepository);
+        accountService = new AccountService(accountRepository, null, null, null);
         Account account = new Account();
         account.setAmount(BigDecimal.TEN);
         account.setCurrency(Currency.USD);
         Account savedAccount = accountService.save(account);
         assertNotNull(savedAccount);
         assertEquals(generatedId, (long) savedAccount.getId());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void saveNullEntityTest_shouldThrowsIllegalArgException() {
+        accountRepository = new AccountRepositoryImpl(null);
+        accountService = new AccountService(accountRepository, null, null, null);
+        accountService.save(null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void saveEntityWithWrongIdTest_shouldThrowsIllegalArgException() {
+        accountRepository = new AccountRepositoryImpl(null);
+        accountService = new AccountService(accountRepository, null, null, null);
+        accountService.save(null);
     }
 
     @Test
@@ -90,7 +117,7 @@ public class AccountServiceTest {
                 return new Page<>(accountList.subList(page, page + size), accountList.size(), page, size);
             }
         }).when(accountRepository).findAll(anyInt(), anyInt());
-        accountService = new AccountService(accountRepository);
+        accountService = new AccountService(accountRepository, null, null, null);
         int page = 0;
         int pageSize = 2;
         Page<Account> accountPage = accountService.findAll(page, pageSize);
@@ -101,5 +128,77 @@ public class AccountServiceTest {
         assertEquals(3, accountPage.getTotalSize());
         assertEquals(pageSize, accountPage.getContents().size());
         assertEquals(1, (long) accountPage.getContents().get(0).getId());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void findAllWithWrongPageSizeTest_shouldThrowIllegalArgException() {
+        accountRepository = new AccountRepositoryImpl(null);
+        accountService = new AccountService(accountRepository, null, null, null);
+        accountService.findAll(0, 0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void findAllWithWrongPageTest_shouldThrowIllegalArgException() {
+        accountRepository = new AccountRepositoryImpl(null);
+        accountService = new AccountService(accountRepository, null, null, null);
+        accountService.findAll(-1, 1);
+    }
+
+    @Test
+    public void makeTransferTest() {
+        BigDecimal fromOriginalAmount = BigDecimal.TEN;
+        BigDecimal toOriginalAmount = BigDecimal.TEN;
+        final Account fromInDb = new Account();
+        fromInDb.setId(1L);
+        fromInDb.setAmount(fromOriginalAmount);
+        fromInDb.setCurrency(Currency.USD);
+
+        final Account toInDb = new Account();
+        toInDb.setId(2L);
+        toInDb.setAmount(toOriginalAmount);
+        toInDb.setCurrency(Currency.EUR);
+
+        Account from = new Account();
+        from.setId(fromInDb.getId());
+        Account to = new Account();
+        to.setId(toInDb.getId());
+
+        BigDecimal exchangeRateFromUsdToEur = new BigDecimal("2.01");
+        currencyService = mock(CurrencyService.class);
+        doReturn(exchangeRateFromUsdToEur).when(currencyService).getExchangeRateOf(eq(Currency.USD), eq(Currency.EUR));
+
+        accountRepository = mock(AccountRepository.class);
+        doReturn(Optional.of(fromInDb)).when(accountRepository).findForUpdateById(eq(fromInDb.getId()));
+        doReturn(Optional.of(toInDb)).when(accountRepository).findForUpdateById(eq(toInDb.getId()));
+
+        transferRepository = mock(TransferRepository.class);
+        doAnswer(invocationOnMock -> {
+            Transfer transfer = invocationOnMock.getArgument(0);
+            transfer.setId(1L);
+            return transfer;
+        }).when(transferRepository).save(any(Transfer.class));
+
+        Transfer transfer = new Transfer(from, to, BigDecimal.TEN, Currency.USD, Currency.EUR, null);
+
+        accountService = new AccountService(accountRepository, mockEntityManagerTransaction(), currencyService, transferRepository);
+
+        Transfer returnedTransfer = accountService.makeTransfer(transfer);
+        assertNotNull(returnedTransfer);
+        assertNotNull(returnedTransfer.getId());
+        assertEquals(from.getId(), returnedTransfer.getFromAccountId());
+        assertNotNull(returnedTransfer.getFrom());
+        assertNotNull(returnedTransfer.getTo());
+        assertEquals(to.getId(), returnedTransfer.getToAccountId());
+        assertEquals(transfer.getAmount(), returnedTransfer.getAmount());
+        assertEquals("amount of subtraction for sender should be correct", fromOriginalAmount.subtract(transfer.getAmount()), fromInDb.getAmount());
+        assertEquals("amount of added amount for receiver should be correct", toOriginalAmount.add(transfer.getAmount().multiply(exchangeRateFromUsdToEur)), toInDb.getAmount());
+    }
+
+    private EntityManager mockEntityManagerTransaction() {
+        EntityTransaction transaction = mock(EntityTransaction.class);
+        doNothing().when(transaction).commit();
+        EntityManager entityManager = mock(EntityManager.class);
+        doReturn(transaction).when(entityManager).getTransaction();
+        return entityManager;
     }
 }

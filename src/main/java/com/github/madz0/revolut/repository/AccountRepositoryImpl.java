@@ -3,6 +3,7 @@ package com.github.madz0.revolut.repository;
 import com.github.madz0.revolut.model.Account;
 
 import javax.persistence.EntityManager;
+import javax.persistence.LockModeType;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,5 +38,21 @@ public class AccountRepositoryImpl extends AbstractRepository<Account> implement
                 .setMaxResults(size)
                 .getResultList();
         return new Page<>(accounts, totalSize, page, size);
+    }
+
+    @Override
+    public Optional<Account> findForUpdateById(Long id) {
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException("id");
+        }
+        return Optional.ofNullable(entityManager.find(Account.class, id, LockModeType.PESSIMISTIC_WRITE));
+    }
+
+    @Override
+    public Optional<Account> findForSharedById(Long id) {
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException("id");
+        }
+        return Optional.ofNullable(entityManager.find(Account.class, id, LockModeType.PESSIMISTIC_READ));
     }
 }
