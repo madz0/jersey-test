@@ -113,8 +113,8 @@ public class AccountService {
         }
     }
 
-    private BigDecimal calculateToAddAmount(BigDecimal current, BigDecimal transfered, BigDecimal exchangeRate) {
-        BigDecimal toAdd = current.add(transfered.multiply(exchangeRate));
+    private BigDecimal calculateToAddAmount(BigDecimal current, BigDecimal transferred, BigDecimal exchangeRate) {
+        BigDecimal toAdd = current.add(transferred.multiply(exchangeRate));
         if (getDigitsCount(toAdd) > Account.MAX_SUPPORTED_MONEY + Account.SUPPORTED_MONEY_SAFE_GUARD ||
                 getFractionsCount(toAdd) > Account.MAX_SUPPORTED_MONEY_FRACTION) {
             throw new UnsupportedOperationException("Calculated money is too big " + toAdd);
