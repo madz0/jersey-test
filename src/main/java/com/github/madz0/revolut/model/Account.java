@@ -20,8 +20,8 @@ public class Account extends BaseModel {
     private Currency currency;
 
     @NotNull(groups = {Create.class, UpdateAmount.class}, message = "Wrong value for money")
-    @Digits(integer = 19, fraction = 4, message = "Wrong value for money")
-    @Column(columnDefinition = "DECIMAL(19, 4)", nullable = false)
+    @Digits(integer = MAX_SUPPORTED_MONEY, fraction = MAX_SUPPORTED_MONEY_FRACTION, message = "Wrong value for money")
+    @Column(columnDefinition = "DECIMAL(" + (MAX_SUPPORTED_MONEY + SUPPORTED_MONEY_SAFE_GUARD) + ", " + MAX_SUPPORTED_MONEY_FRACTION + ")", nullable = false)
     private BigDecimal amount;
 
     @JsonGetter("amount")

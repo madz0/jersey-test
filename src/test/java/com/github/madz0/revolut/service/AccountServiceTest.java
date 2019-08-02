@@ -1,6 +1,7 @@
 package com.github.madz0.revolut.service;
 
 import com.github.madz0.revolut.model.Account;
+import com.github.madz0.revolut.model.BaseModel;
 import com.github.madz0.revolut.model.Currency;
 import com.github.madz0.revolut.model.Transfer;
 import com.github.madz0.revolut.repository.AccountRepository;
@@ -192,6 +193,156 @@ public class AccountServiceTest {
         assertEquals(transfer.getAmount(), returnedTransfer.getAmount());
         assertEquals("amount of subtraction for sender should be correct", fromOriginalAmount.subtract(transfer.getAmount()), fromInDb.getAmount());
         assertEquals("amount of added amount for receiver should be correct", toOriginalAmount.add(transfer.getAmount().multiply(exchangeRateFromUsdToEur)), toInDb.getAmount());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void makeTransferNullTransferObjectTest_shouldThrowsIllegalArg() {
+        accountService = new AccountService(accountRepository, mockEntityManagerTransaction(), currencyService, transferRepository);
+        accountService.makeTransfer(null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void makeTransferNullTransferSenderIdTest_shouldThrowsIllegalArg() {
+        accountService = new AccountService(accountRepository, mockEntityManagerTransaction(), currencyService, transferRepository);
+        Account to = new Account();
+        to.setId(2L);
+        Transfer transfer = new Transfer(null, to, BigDecimal.TEN, Currency.USD, Currency.EUR, null);
+        accountService.makeTransfer(transfer);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void makeTransferNullTransferReceiverIdTest_shouldThrowsIllegalArg() {
+        accountService = new AccountService(accountRepository, mockEntityManagerTransaction(), currencyService, transferRepository);
+        Account from = new Account();
+        from.setId(2L);
+        Transfer transfer = new Transfer(from, null, BigDecimal.TEN, Currency.USD, Currency.EUR, null);
+        accountService.makeTransfer(transfer);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void makeTransferFromAnAccountToItselfTest_shouldThrowsIllegalArg() {
+        accountService = new AccountService(accountRepository, mockEntityManagerTransaction(), currencyService, transferRepository);
+        Account from = new Account();
+        from.setId(2L);
+        Account to = new Account();
+        to.setId(2L);
+        Transfer transfer = new Transfer(from, to, BigDecimal.TEN, Currency.USD, Currency.EUR, null);
+        accountService.makeTransfer(transfer);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void makeTransferWithNullAmountTest_shouldThrowsIllegalArg() {
+        accountService = new AccountService(accountRepository, mockEntityManagerTransaction(), currencyService, transferRepository);
+        Account from = new Account();
+        from.setId(1L);
+        Account to = new Account();
+        to.setId(2L);
+        Transfer transfer = new Transfer(from, to, null, null, null, null);
+        accountService.makeTransfer(transfer);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void makeTransferWithZeroAmountTest_shouldThrowsIllegalArg() {
+        accountService = new AccountService(accountRepository, mockEntityManagerTransaction(), currencyService, transferRepository);
+        Account from = new Account();
+        from.setId(1L);
+        Account to = new Account();
+        to.setId(2L);
+        Transfer transfer = new Transfer(from, to, BigDecimal.ZERO, null, null, null);
+        accountService.makeTransfer(transfer);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void makeTransferWithSmallerThanZeroAmountTest_shouldThrowsIllegalArg() {
+        accountService = new AccountService(accountRepository, mockEntityManagerTransaction(), currencyService, transferRepository);
+        Account from = new Account();
+        from.setId(1L);
+        Account to = new Account();
+        to.setId(2L);
+        Transfer transfer = new Transfer(from, to, new BigDecimal("-1"), null, null, null);
+        accountService.makeTransfer(transfer);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void makeTransferWithBiggerDigitsThanWeSupportTest_shouldThrowsIllegalArg() {
+        accountService = new AccountService(accountRepository, mockEntityManagerTransaction(), currencyService, transferRepository);
+        Account from = new Account();
+        from.setId(1L);
+        Account to = new Account();
+        to.setId(2L);
+        StringBuilder number = new StringBuilder();
+        for (int i = 0; i <= BaseModel.MAX_SUPPORTED_MONEY; i++) {
+            number.append("1");
+        }
+        Transfer transfer = new Transfer(from, to, new BigDecimal(number.toString()), null, null, null);
+        accountService.makeTransfer(transfer);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void makeTransferWithBiggerFractionThanWeSupportTest_shouldThrowsIllegalArg() {
+        accountService = new AccountService(accountRepository, mockEntityManagerTransaction(), currencyService, transferRepository);
+        Account from = new Account();
+        from.setId(1L);
+        Account to = new Account();
+        to.setId(2L);
+        Transfer transfer = new Transfer(from, to, new BigDecimal("1.00001"), null, null, null);
+        accountService.makeTransfer(transfer);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void makeTransferWithInvalidSenderTest_shouldThrowsIllegalArg() {
+        BigDecimal fromOriginalAmount = BigDecimal.TEN;
+        BigDecimal toOriginalAmount = BigDecimal.TEN;
+        final Account fromInDb = new Account();
+        fromInDb.setId(1L);
+        fromInDb.setAmount(fromOriginalAmount);
+        fromInDb.setCurrency(Currency.USD);
+
+        final Account toInDb = new Account();
+        toInDb.setId(2L);
+        toInDb.setAmount(toOriginalAmount);
+        toInDb.setCurrency(Currency.EUR);
+
+        Account from = new Account();
+        from.setId(fromInDb.getId());
+        Account to = new Account();
+        to.setId(toInDb.getId());
+
+        accountRepository = mock(AccountRepository.class);
+        doReturn(Optional.empty()).when(accountRepository).findForUpdateById(eq(fromInDb.getId()));
+        doReturn(Optional.of(toInDb)).when(accountRepository).findForUpdateById(eq(toInDb.getId()));
+
+        Transfer transfer = new Transfer(from, to, BigDecimal.TEN, Currency.USD, Currency.EUR, null);
+        accountService = new AccountService(accountRepository, mockEntityManagerTransaction(), currencyService, transferRepository);
+        accountService.makeTransfer(transfer);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void makeTransferWithInvalidReceiverTest_shouldThrowsIllegalArg() {
+        BigDecimal fromOriginalAmount = BigDecimal.TEN;
+        BigDecimal toOriginalAmount = BigDecimal.TEN;
+        final Account fromInDb = new Account();
+        fromInDb.setId(1L);
+        fromInDb.setAmount(fromOriginalAmount);
+        fromInDb.setCurrency(Currency.USD);
+
+        final Account toInDb = new Account();
+        toInDb.setId(2L);
+        toInDb.setAmount(toOriginalAmount);
+        toInDb.setCurrency(Currency.EUR);
+
+        Account from = new Account();
+        from.setId(fromInDb.getId());
+        Account to = new Account();
+        to.setId(toInDb.getId());
+
+        accountRepository = mock(AccountRepository.class);
+        doReturn(Optional.of(fromInDb)).when(accountRepository).findForUpdateById(eq(fromInDb.getId()));
+        doReturn(Optional.empty()).when(accountRepository).findForUpdateById(eq(toInDb.getId()));
+
+        Transfer transfer = new Transfer(from, to, BigDecimal.TEN, Currency.USD, Currency.EUR, null);
+        accountService = new AccountService(accountRepository, mockEntityManagerTransaction(), currencyService, transferRepository);
+        accountService.makeTransfer(transfer);
     }
 
     private EntityManager mockEntityManagerTransaction() {

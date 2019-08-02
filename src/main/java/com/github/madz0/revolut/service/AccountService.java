@@ -3,6 +3,7 @@ package com.github.madz0.revolut.service;
 import com.github.madz0.revolut.exception.DataIntegrityException;
 import com.github.madz0.revolut.exception.ExternalServiceException;
 import com.github.madz0.revolut.model.Account;
+import com.github.madz0.revolut.model.BaseModel;
 import com.github.madz0.revolut.model.Transfer;
 import com.github.madz0.revolut.repository.AccountRepository;
 import com.github.madz0.revolut.repository.Page;
@@ -12,6 +13,9 @@ import lombok.RequiredArgsConstructor;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
 import java.math.BigDecimal;
+
+import static com.github.madz0.revolut.util.CurrencyUtils.getDigitsCount;
+import static com.github.madz0.revolut.util.CurrencyUtils.getFractionsCount;
 
 @RequiredArgsConstructor
 public class AccountService {
@@ -25,6 +29,7 @@ public class AccountService {
     }
 
     public Account save(Account account) {
+        assertBigDecimalWithAllocatedSize(account.getAmount());
         return accountRepository.save(account);
     }
 
@@ -87,6 +92,16 @@ public class AccountService {
         }
         if (transfer.getAmount() == null || transfer.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("transfer amount must be bigger than 0");
+        }
+        assertBigDecimalWithAllocatedSize(transfer.getAmount());
+    }
+
+    private void assertBigDecimalWithAllocatedSize(BigDecimal bigDecimal) {
+        if (getDigitsCount(bigDecimal) > BaseModel.MAX_SUPPORTED_MONEY) {
+            throw new IllegalArgumentException("transfer amount is bigger than allocated size");
+        }
+        if (getFractionsCount(bigDecimal) > BaseModel.MAX_SUPPORTED_MONEY_FRACTION) {
+            throw new IllegalArgumentException("transfer amount is bigger than allocated size");
         }
     }
 }

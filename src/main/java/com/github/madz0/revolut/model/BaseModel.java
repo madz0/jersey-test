@@ -18,6 +18,9 @@ import java.util.Date;
 @Audited
 @EntityListeners(BaseModel.AuditListener.class)
 public abstract class BaseModel implements Serializable {
+    public final static int MAX_SUPPORTED_MONEY_FRACTION = 4;
+    public final static int MAX_SUPPORTED_MONEY = 19;
+    public final static int SUPPORTED_MONEY_SAFE_GUARD = 4;
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(nullable = false)

@@ -29,8 +29,8 @@ public class Transfer extends BaseModel {
     @ManyToOne(fetch = FetchType.LAZY)
     private Account to;
 
-    @Digits(integer = 19, fraction = 4, message = "Wrong value for money")
-    @Column(columnDefinition = "DECIMAL(19, 4)", nullable = false)
+    @Digits(integer = MAX_SUPPORTED_MONEY, fraction = MAX_SUPPORTED_MONEY_FRACTION, message = "Wrong value for money")
+    @Column(columnDefinition = "DECIMAL(" + (MAX_SUPPORTED_MONEY + SUPPORTED_MONEY_SAFE_GUARD) + ", " + MAX_SUPPORTED_MONEY_FRACTION + ")", nullable = false)
     private BigDecimal amount;
 
     @Enumerated(EnumType.STRING)
@@ -52,7 +52,7 @@ public class Transfer extends BaseModel {
 
     @JsonGetter
     public Long getFromAccountId() {
-        if(from == null) {
+        if (from == null) {
             return null;
         }
         return from.getId();
@@ -60,7 +60,7 @@ public class Transfer extends BaseModel {
 
     @JsonGetter
     public Long getToAccountId() {
-        if(to == null) {
+        if (to == null) {
             return null;
         }
         return to.getId();
