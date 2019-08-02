@@ -29,6 +29,7 @@ public class AccountService {
     }
 
     public Account save(Account account) {
+        assertAccountBeforeSave(account);
         assertBigDecimalWithAllocatedSize(account.getAmount());
         return accountRepository.save(account);
     }
@@ -120,5 +121,17 @@ public class AccountService {
             throw new UnsupportedOperationException("Calculated money is too big " + toAdd);
         }
         return toAdd;
+    }
+
+    private void assertAccountBeforeSave(Account account) {
+        if (account == null) {
+            throw new IllegalArgumentException("Null account");
+        }
+        if (account.getAmount() == null) {
+            throw new IllegalArgumentException("Account amount is null");
+        }
+        if (account.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Account amount equals or smaller than 0");
+        }
     }
 }
