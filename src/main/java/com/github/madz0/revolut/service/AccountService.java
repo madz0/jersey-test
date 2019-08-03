@@ -33,6 +33,7 @@ public class AccountService {
     public Account create(Account account) {
         assertAccountBeforeSave(account);
         assertBigDecimalWithAllocatedSize(account.getAmount());
+        assertAccountBeforeCreate(account);
         return accountRepository.save(account);
     }
 
@@ -146,6 +147,15 @@ public class AccountService {
         }
         if (account.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Account amount equals or smaller than 0");
+        }
+    }
+
+    private void assertAccountBeforeCreate(Account account) {
+        if (account.getId() != null) {
+            throw new IllegalArgumentException("Id should be null for creating");
+        }
+        if (account.getVersion() != null) {
+            throw new IllegalArgumentException("Version should be null for creating");
         }
     }
 

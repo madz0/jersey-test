@@ -92,12 +92,34 @@ public class AccountServiceUnitTest extends AbstractUnitTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void createEntityWithWrongIdTest_shouldThrowsIllegalArgException() {
+    public void createEntityWithNotNullIdTest_shouldThrowsIllegalArgException() {
         accountRepository = new AccountRepositoryImpl(null);
         accountService = new AccountService(accountRepository, null, null, null);
         Account account = new Account();
-        account.setId(-1L);
+        account.setId(1L);
         accountService.create(null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void createEntityWithNotNullVersionTest_shouldThrowsIllegalArgException() {
+        accountRepository = new AccountRepositoryImpl(null);
+        accountService = new AccountService(accountRepository, null, null, null);
+        Account account = new Account();
+        account.setVersion(1L);
+        accountService.create(null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void createEntityWithLargerMoneyThanWeSupported_shouldThrowsIllegalArgException() {
+        accountRepository = new AccountRepositoryImpl(null);
+        accountService = new AccountService(accountRepository, null, null, null);
+        Account account = new Account();
+        StringBuilder number = new StringBuilder();
+        for (int i = 0; i <= BaseModel.MAX_SUPPORTED_MONEY; i++) {
+            number.append("9");
+        }
+        account.setAmount(new BigDecimal(number.toString()));
+        accountService.create(account);
     }
 
     @Test
@@ -135,6 +157,38 @@ public class AccountServiceUnitTest extends AbstractUnitTest {
         Account account = new Account();
         account.setId(-1L);
         accountService.update(null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void updateEntityWithNullIdTest_shouldThrowsIllegalArgException() {
+        accountRepository = new AccountRepositoryImpl(null);
+        accountService = new AccountService(accountRepository, null, null, null);
+        Account account = new Account();
+        accountService.update(account);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void updateEntityWithWrongVersionTest_shouldThrowsIllegalArgException() {
+        accountRepository = new AccountRepositoryImpl(null);
+        accountService = new AccountService(accountRepository, null, null, null);
+        Account account = new Account();
+        account.setId(1L);
+        accountService.update(account);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void updateEntityWithLargerMoneyThanWeSupported_shouldThrowsIllegalArgException() {
+        accountRepository = new AccountRepositoryImpl(null);
+        accountService = new AccountService(accountRepository, null, null, null);
+        Account account = new Account();
+        account.setId(1L);
+        account.setVersion(1L);
+        StringBuilder number = new StringBuilder();
+        for (int i = 0; i <= BaseModel.MAX_SUPPORTED_MONEY; i++) {
+            number.append("9");
+        }
+        account.setAmount(new BigDecimal(number.toString()));
+        accountService.create(account);
     }
 
     @Test

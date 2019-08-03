@@ -16,7 +16,7 @@ import java.util.Properties;
 @Slf4j
 public class Main {
     private final static String PROPERTY_FILE_NAME = "app.properties";
-    public final static String BASE_URI = "http://localhost:9998";
+    private final static String BASE_URI = "http://localhost:9998";
     public final static String APP_URL_KEY = "app.url";
     public static void main(String[] args) throws Exception {
         new Main().start();
