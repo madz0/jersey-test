@@ -3,6 +3,7 @@ package com.github.madz0.revolut.repository;
 import com.github.madz0.revolut.exception.DbQueryException;
 import com.github.madz0.revolut.model.Account;
 
+import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
 import java.util.List;
@@ -10,7 +11,7 @@ import java.util.Optional;
 
 public class AccountRepositoryImpl extends AbstractRepository<Account> implements AccountRepository {
     private final EntityManager entityManager;
-
+    @Inject
     public AccountRepositoryImpl(EntityManager entityManager) {
         super(entityManager);
         this.entityManager = entityManager;
@@ -44,7 +45,7 @@ public class AccountRepositoryImpl extends AbstractRepository<Account> implement
             throw new DbQueryException("Failed to execute count query", e);
         }
 
-        if (page * size >= totalSize) {
+        if (page * size > totalSize) {
             throw new IllegalArgumentException("page value is bigger than result set size");
         }
         try {

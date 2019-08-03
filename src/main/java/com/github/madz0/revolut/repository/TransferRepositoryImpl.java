@@ -3,10 +3,13 @@ package com.github.madz0.revolut.repository;
 import com.github.madz0.revolut.exception.DbQueryException;
 import com.github.madz0.revolut.model.Transfer;
 
+import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import java.util.List;
 
 public class TransferRepositoryImpl extends AbstractRepository<Transfer> implements TransferRepository {
+
+    @Inject
     public TransferRepositoryImpl(EntityManager entityManager) {
         super(entityManager);
     }

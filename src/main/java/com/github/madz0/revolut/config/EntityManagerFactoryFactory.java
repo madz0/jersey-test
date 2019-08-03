@@ -1,27 +1,19 @@
 package com.github.madz0.revolut.config;
 
-import org.glassfish.jersey.server.CloseableService;
+import lombok.Setter;
 
-import javax.inject.Inject;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
-
 import java.util.function.Supplier;
 
-import static java.util.Objects.requireNonNull;
-
+@Setter
 public class EntityManagerFactoryFactory implements Supplier<EntityManagerFactory> {
-    private final CloseableService closeableService;
-
-    @Inject
-    public EntityManagerFactoryFactory(CloseableService closeableServiceParam) {
-        closeableService = requireNonNull(closeableServiceParam);
-    }
+    //constructor parameter did't work
+    @Config("jpa.unit")
+    private String unit;
 
     private EntityManagerFactory provide() {
-        EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("h2-unit");
-        closeableService.add(entityManagerFactory::close);
-        return entityManagerFactory;
+        return Persistence.createEntityManagerFactory(unit);
     }
 
     @Override

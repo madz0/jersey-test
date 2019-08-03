@@ -10,6 +10,7 @@ import com.github.madz0.revolut.repository.Page;
 import com.github.madz0.revolut.repository.TransferRepository;
 import lombok.RequiredArgsConstructor;
 
+import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
 import java.math.BigDecimal;
@@ -17,7 +18,7 @@ import java.math.BigDecimal;
 import static com.github.madz0.revolut.util.CurrencyUtils.getDigitsCount;
 import static com.github.madz0.revolut.util.CurrencyUtils.getFractionsCount;
 
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor = @__(@Inject))
 public class AccountService {
     private final static int DEFAULT_PAGE_SIZE = 20;
     private final AccountRepository accountRepository;
@@ -29,9 +30,16 @@ public class AccountService {
         return accountRepository.findById(id).orElseThrow(() -> new DataIntegrityException("Could not find id " + id));
     }
 
-    public Account save(Account account) {
+    public Account create(Account account) {
         assertAccountBeforeSave(account);
         assertBigDecimalWithAllocatedSize(account.getAmount());
+        return accountRepository.save(account);
+    }
+
+    public Account update(Account account) {
+        assertAccountBeforeSave(account);
+        assertBigDecimalWithAllocatedSize(account.getAmount());
+        assertAccountBeforeUpdate(account);
         return accountRepository.save(account);
     }
 
@@ -138,6 +146,15 @@ public class AccountService {
         }
         if (account.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Account amount equals or smaller than 0");
+        }
+    }
+
+    private void assertAccountBeforeUpdate(Account account) {
+        if (account.getId() == null || account.getId() <= 0) {
+            throw new IllegalArgumentException("Cannot update without proper id field (not null and > 0), id =" + account.getId());
+        }
+        if (account.getVersion() == null || account.getVersion() <= 0) {
+            throw new IllegalArgumentException("Cannot update without proper version field (not null and > 0), version =" + account.getVersion());
         }
     }
 

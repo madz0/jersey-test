@@ -1,8 +1,10 @@
 package com.github.madz0.revolut.resource;
 
+import com.github.madz0.revolut.config.Config;
 import com.github.madz0.revolut.model.Account;
 import com.github.madz0.revolut.model.Transfer;
 import com.github.madz0.revolut.service.AccountService;
+import lombok.RequiredArgsConstructor;
 
 import javax.inject.Inject;
 import javax.ws.rs.*;
@@ -11,24 +13,27 @@ import javax.ws.rs.core.Response;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-@Path("/api/accounts")
+import static com.github.madz0.revolut.Main.APP_URL_KEY;
+
+@RequiredArgsConstructor(onConstructor = @__(@Inject))
+@Path(AccountsResource.BASE_PATH)
 public class AccountsResource {
+    final static String BASE_PATH = "/api/accounts";
 
-    private AccountService accountService;
-
-    @Inject
-    public AccountsResource(AccountService accountService) {
-        this.accountService = accountService;
-    }
+    @Config(APP_URL_KEY)
+    private String baseUrl;
+    private final AccountService accountService;
 
     @POST
+    @Path("/")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response create(Account account) throws URISyntaxException {
-        return Response.created(new URI("http://localhost/api/accounts/" + accountService.save(account).getId())).build();
+        return Response.created(new URI(baseUrl + BASE_PATH + "/" + accountService.create(account).getId())).build();
     }
 
     @GET
+    @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
     public Response list(@QueryParam("page") int page, @QueryParam("pageSize") int pageSize) {
         return Response.ok(accountService.findAll(page, pageSize)).build();
@@ -37,7 +42,7 @@ public class AccountsResource {
     @GET
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response get(Long id) {
+    public Response get(@PathParam("id") Long id) {
         return Response.ok(accountService.findById(id)).build();
     }
 
@@ -46,7 +51,7 @@ public class AccountsResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response update(Account account) {
-        accountService.save(account);
+        accountService.update(account);
         return Response.ok().build();
     }
 
@@ -55,6 +60,6 @@ public class AccountsResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response transfer(Transfer transfer) throws URISyntaxException {
-        return Response.created(new URI("http://localhost/api/accounts/" + transfer.getFromAccountId() + "/transfers/" + accountService.makeTransfer(transfer).getId())).build();
+        return Response.created(new URI(baseUrl + BASE_PATH + "/" + transfer.getFromAccountId() + "/transfers/" + accountService.makeTransfer(transfer).getId())).build();
     }
 }

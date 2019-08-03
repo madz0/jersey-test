@@ -63,7 +63,7 @@ public class AccountServiceUnitTest extends AbstractUnitTest {
     }
 
     @Test
-    public void saveTest() {
+    public void createTest() {
         final long generatedId = 1;
         accountRepository = mock(AccountRepository.class);
         doAnswer(invocationOnMock -> {
@@ -79,23 +79,62 @@ public class AccountServiceUnitTest extends AbstractUnitTest {
         Account account = new Account();
         account.setAmount(BigDecimal.TEN);
         account.setCurrency(Currency.USD);
-        Account savedAccount = accountService.save(account);
+        Account savedAccount = accountService.create(account);
         assertNotNull(savedAccount);
         assertEquals(generatedId, (long) savedAccount.getId());
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void saveNullEntityTest_shouldThrowsIllegalArgException() {
+    public void createNullEntityTest_shouldThrowsIllegalArgException() {
         accountRepository = new AccountRepositoryImpl(null);
         accountService = new AccountService(accountRepository, null, null, null);
-        accountService.save(null);
+        accountService.create(null);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void saveEntityWithWrongIdTest_shouldThrowsIllegalArgException() {
+    public void createEntityWithWrongIdTest_shouldThrowsIllegalArgException() {
         accountRepository = new AccountRepositoryImpl(null);
         accountService = new AccountService(accountRepository, null, null, null);
-        accountService.save(null);
+        Account account = new Account();
+        account.setId(-1L);
+        accountService.create(null);
+    }
+
+    @Test
+    public void updateTest() {
+        accountRepository = mock(AccountRepository.class);
+        doAnswer(invocationOnMock -> {
+            Account acc = invocationOnMock.getArgument(0);
+            if (acc == null) {
+                return invocationOnMock.callRealMethod();
+            } else {
+                return acc;
+            }
+        }).when(accountRepository).save(Mockito.any(Account.class));
+        accountService = new AccountService(accountRepository, null, null, null);
+        Account account = new Account();
+        account.setId(1L);
+        account.setAmount(BigDecimal.TEN);
+        account.setCurrency(Currency.USD);
+        account.setVersion(1L);
+        Account savedAccount = accountService.update(account);
+        assertNotNull(savedAccount);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void updateNullEntityTest_shouldThrowsIllegalArgException() {
+        accountRepository = new AccountRepositoryImpl(null);
+        accountService = new AccountService(accountRepository, null, null, null);
+        accountService.update(null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void updateEntityWithWrongIdTest_shouldThrowsIllegalArgException() {
+        accountRepository = new AccountRepositoryImpl(null);
+        accountService = new AccountService(accountRepository, null, null, null);
+        Account account = new Account();
+        account.setId(-1L);
+        accountService.update(null);
     }
 
     @Test
