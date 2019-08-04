@@ -6,6 +6,7 @@ import com.github.madz0.revolut.model.Account;
 
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
+import javax.persistence.EntityTransaction;
 import javax.persistence.LockModeType;
 import java.util.List;
 import java.util.Optional;
@@ -41,24 +42,32 @@ public class AccountRepositoryImpl extends AbstractRepository<Account> implement
         }
 
         long totalSize;
+        EntityTransaction transaction = entityManager.getTransaction();
         try {
-            totalSize = entityManager.createQuery("select count (a.id) from Account a", Long.class).getSingleResult();
-        } catch (Exception e) {
-            throw new DbQueryException("Failed to execute count query", e);
-        }
+            transaction.begin();
+            try {
+                totalSize = entityManager.createQuery("select count (a.id) from Account a", Long.class).getSingleResult();
+            } catch (Exception e) {
+                throw new DbQueryException("Failed to execute count query", e);
+            }
 
-        if (page * size > totalSize) {
-            throw new RestIllegalArgumentException("page value is bigger than result set size");
-        }
-        try {
-            List<Account> accounts = entityManager.createQuery(
-                    "select a from Account a", Account.class)
-                    .setFirstResult(page * size)
-                    .setMaxResults(size)
-                    .getResultList();
-            return new Page<>(accounts, totalSize, page, size);
+            if (page * size > totalSize) {
+                throw new RestIllegalArgumentException("page value is bigger than result set size");
+            }
+            try {
+                List<Account> accounts = entityManager.createQuery(
+                        "select a from Account a", Account.class)
+                        .setFirstResult(page * size)
+                        .setMaxResults(size)
+                        .getResultList();
+                transaction.commit();
+                return new Page<>(accounts, totalSize, page, size);
+            } catch (Exception e) {
+                throw new DbQueryException("Failed to execute list query. page=" + page + ", size=" + size + ", totalSize=" + totalSize, e);
+            }
         } catch (Exception e) {
-            throw new DbQueryException("Failed to execute list query. page=" + page + ", size=" + size + ", totalSize=" + totalSize, e);
+            transaction.rollback();
+            throw e;
         }
     }
 
