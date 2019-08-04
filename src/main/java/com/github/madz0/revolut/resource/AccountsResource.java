@@ -1,5 +1,6 @@
 package com.github.madz0.revolut.resource;
 
+import com.github.madz0.revolut.exception.RestIllegalArgumentException;
 import com.github.madz0.revolut.model.Account;
 import com.github.madz0.revolut.model.Transfer;
 import com.github.madz0.revolut.service.AccountService;
@@ -44,7 +45,11 @@ public class AccountsResource {
     @Path("/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response update(Account account) {
+    public Response update(@PathParam("id") Long id, Account account) {
+        if (id == null || id <= 0) {
+            throw new RestIllegalArgumentException("invalid id");
+        }
+        account.setId(id);
         accountService.update(account);
         return Response.ok().build();
     }

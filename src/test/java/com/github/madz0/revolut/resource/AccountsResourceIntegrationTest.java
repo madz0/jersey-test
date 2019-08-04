@@ -86,8 +86,8 @@ public class AccountsResourceIntegrationTest extends JerseyTest {
     }
 
     @Test
-    public void update() {
-        setupForSuccessfulGet();
+    public void update_whenProperRequest_thenOk() {
+        setupForSuccessfulUpdate();
         Account account1 = new Account();
         account1.setAmount(BigDecimal.TEN);
         account1.setCurrency(Currency.USD);
@@ -95,10 +95,8 @@ public class AccountsResourceIntegrationTest extends JerseyTest {
         account1.setVersion(1L);
         Response response = target(BASE_PATH+"/1").request(MediaType.APPLICATION_JSON_TYPE)
                 .put(Entity.entity(account1, MediaType.APPLICATION_JSON_TYPE));
-        assertEquals("Http Response should be " + Response.Status.OK.getStatusCode(),
+        assertEquals("Http response should be " + Response.Status.OK.getStatusCode(),
                 Response.Status.OK.getStatusCode(), response.getStatus());
-        String json = response.readEntity(String.class);
-        assertTrue("There should be id and version in the response", json.contains("{\"id\":1,\"version\":"));
     }
 
     @Test

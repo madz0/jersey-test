@@ -168,7 +168,7 @@ public class AccountService {
         if (account.getId() == null || account.getId() <= 0) {
             throw new RestIllegalArgumentException("Cannot update without proper id field (not null and > 0), id =" + account.getId());
         }
-        if (account.getVersion() == null || account.getVersion() <= 0) {
+        if (account.getVersion() == null || account.getVersion() < 0) {
             throw new RestIllegalArgumentException("Cannot update without proper version field (not null and > 0), version =" + account.getVersion());
         }
     }
