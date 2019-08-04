@@ -2,6 +2,8 @@ package com.github.madz0.revolut.model;
 
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonSetter;
 import com.github.madz0.revolut.util.CurrencyUtils;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -20,6 +22,7 @@ import java.time.ZoneId;
 @AllArgsConstructor
 @Entity
 @Table(name = "transfers", indexes = {@Index(name = "from_account_id", columnList = "from_account_id"), @Index(name = "to_account_id", columnList = "to_account_id")})
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Transfer extends BaseModel {
     public final static int EXCHANGE_RATE_MAX_DIGITS = 13;
     public final static int EXCHANGE_RATE_MAX_FRAGMENTS = 4;
@@ -48,7 +51,7 @@ public class Transfer extends BaseModel {
 
     @JsonGetter("destinationAmount")
     public BigDecimal getAmountInDestinationCurrency() {
-        if (toCurrency == null || amount == null) {
+        if (toCurrency == null || amount == null || exchangeRate == null) {
             return null;
         }
         return CurrencyUtils.getRounded(toCurrency.getFraction(), amount.multiply(exchangeRate));
@@ -68,6 +71,16 @@ public class Transfer extends BaseModel {
             return null;
         }
         return to.getId();
+    }
+
+    @JsonSetter
+    public void setFrom(Account account) {
+        this.from = account;
+    }
+
+    @JsonSetter
+    public void setTo(Account account) {
+        this.to = account;
     }
 
     @JsonGetter
@@ -90,6 +103,9 @@ public class Transfer extends BaseModel {
 
     @JsonGetter
     public LocalDateTime getExchangeDateAndTime() {
+        if (getCreatedDate() == null) {
+            return null;
+        }
         return LocalDateTime.ofInstant(getCreatedDate().toInstant(), ZoneId.systemDefault());
     }
 }

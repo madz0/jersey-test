@@ -45,7 +45,7 @@ public class AccountsResourceIntegrationTest extends JerseyTest {
         account.setAmount(BigDecimal.TEN);
         Response response = target(BASE_PATH).request(MediaType.APPLICATION_JSON_TYPE)
                 .post(Entity.entity(account, MediaType.APPLICATION_JSON_TYPE));
-        assertEquals("Http Response should be 201 ",
+        assertEquals("Http Response should be " + Response.Status.CREATED.getStatusCode(),
                 Response.Status.CREATED.getStatusCode(), response.getStatus());
         assertTrue("Http Response header should contains created location", response.getHeaderString("Location").contains(BASE_PATH));
     }
@@ -78,7 +78,7 @@ public class AccountsResourceIntegrationTest extends JerseyTest {
     @Test
     public void get_whenProperRequest_thenOkAndContainsResourceData() {
         setupForSuccessfulGet();
-        Response response = target(BASE_PATH+"/1").request().get();
+        Response response = target(BASE_PATH + "/1").request().get();
         assertEquals("Http Response should be " + Response.Status.OK.getStatusCode(),
                 Response.Status.OK.getStatusCode(), response.getStatus());
         String json = response.readEntity(String.class);
@@ -93,7 +93,7 @@ public class AccountsResourceIntegrationTest extends JerseyTest {
         account1.setCurrency(Currency.USD);
         account1.setId(1L);
         account1.setVersion(1L);
-        Response response = target(BASE_PATH+"/1").request(MediaType.APPLICATION_JSON_TYPE)
+        Response response = target(BASE_PATH + "/1").request(MediaType.APPLICATION_JSON_TYPE)
                 .put(Entity.entity(account1, MediaType.APPLICATION_JSON_TYPE));
         assertEquals("Http response should be " + Response.Status.OK.getStatusCode(),
                 Response.Status.OK.getStatusCode(), response.getStatus());
@@ -101,6 +101,18 @@ public class AccountsResourceIntegrationTest extends JerseyTest {
 
     @Test
     public void transfer() {
+        setupForSuccessfulTransfer();
+        Account from = new Account();
+        from.setId(1L);
+        Account to = new Account();
+        to.setId(2L);
+        Transfer transfer = new Transfer(from, to, BigDecimal.TEN, Currency.USD, Currency.EUR, null);
+        Response response = target(BASE_PATH + "/transfers").request(MediaType.APPLICATION_JSON_TYPE)
+                .post(Entity.entity(transfer, MediaType.APPLICATION_JSON_TYPE));
+        assertEquals("Http Response should be " + Response.Status.CREATED.getStatusCode(),
+                Response.Status.CREATED.getStatusCode(), response.getStatus());
+        assertTrue("Http Response header should contains created location", response.getHeaderString("Location").contains(BASE_PATH + "/" + from.getId() + "/transfers"));
+
     }
 
     private void setupForSuccessfulCreate() {
@@ -126,8 +138,7 @@ public class AccountsResourceIntegrationTest extends JerseyTest {
             account3.setCurrency(Currency.EUR);
             account3.setId(3L);
             List<Account> accountList = Arrays.asList(account1, account2, account3);
-            Page<Account> accountPage = new Page<>(accountList, 3, invocationOnMock.getArgument(0), invocationOnMock.getArgument(1));
-            return accountPage;
+            return new Page<>(accountList, 3, invocationOnMock.getArgument(0), invocationOnMock.getArgument(1));
         }).when(accountService).findAll(anyInt(), anyInt());
     }
 
