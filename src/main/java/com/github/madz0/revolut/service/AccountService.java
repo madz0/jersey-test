@@ -43,6 +43,12 @@ public class AccountService {
         assertAccountBeforeSave(account);
         assertBigDecimalWithAllocatedSize(account.getAmount());
         assertAccountBeforeUpdate(account);
+        Account dbAccount = findById(account.getId());
+        if (account.getCurrency() == null) {
+            account.setCurrency(dbAccount.getCurrency());
+        } else if (dbAccount.getCurrency() != account.getCurrency()) {
+            throw new RestIllegalArgumentException("Currency cannot be changed");
+        }
         return accountRepository.save(account);
     }
 
@@ -147,9 +153,6 @@ public class AccountService {
         if (account.getAmount() == null) {
             throw new RestIllegalArgumentException("Account amount is null");
         }
-        if (account.getCurrency() == null) {
-            throw new RestIllegalArgumentException("Account currency is null");
-        }
         if (account.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new RestIllegalArgumentException("Account amount equals or smaller than 0");
         }
@@ -161,6 +164,9 @@ public class AccountService {
         }
         if (account.getVersion() != null) {
             throw new RestIllegalArgumentException("Version should be null for creating");
+        }
+        if (account.getCurrency() == null) {
+            throw new RestIllegalArgumentException("Account currency is null");
         }
     }
 

@@ -25,7 +25,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
-public class AccountsResourceIntegrationTest extends JerseyTest {
+public class AccountsResourceSuccessIntegrationTest extends JerseyTest {
     @Mock
     AccountService accountService;
 

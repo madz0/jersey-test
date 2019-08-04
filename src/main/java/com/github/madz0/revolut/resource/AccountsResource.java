@@ -7,6 +7,8 @@ import com.github.madz0.revolut.service.AccountService;
 import lombok.RequiredArgsConstructor;
 
 import javax.inject.Inject;
+import javax.validation.Valid;
+import javax.validation.groups.ConvertGroup;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -23,7 +25,7 @@ public class AccountsResource {
     @Path("/")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response create(Account account) throws URISyntaxException {
+    public Response create(@Valid @ConvertGroup(to = Account.Create.class) Account account) throws URISyntaxException {
         return Response.created(new URI(BASE_PATH + "/" + accountService.create(account).getId())).build();
     }
 
@@ -45,7 +47,7 @@ public class AccountsResource {
     @Path("/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response update(@PathParam("id") Long id, Account account) {
+    public Response update(@PathParam("id") Long id, @Valid @ConvertGroup(to = Account.Update.class) Account account) {
         if (id == null || id <= 0) {
             throw new RestIllegalArgumentException("invalid id");
         }

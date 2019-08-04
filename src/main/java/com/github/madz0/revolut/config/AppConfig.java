@@ -16,6 +16,7 @@ import org.glassfish.jersey.internal.inject.AbstractBinder;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.process.internal.RequestScoped;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.server.ServerProperties;
 import org.glassfish.jersey.server.spi.internal.ValueParamProvider;
 
 import javax.inject.Singleton;
@@ -32,7 +33,12 @@ public class AppConfig extends ResourceConfig {
         register(AccountsResource.class);
         register(JerseyObjectMapperProvider.class);
         register(JacksonFeature.class);
-        packages("com.github.madz0.revolut.exception");
+        packages(getExceptionMappersPackage());
+        property(ServerProperties.BV_SEND_ERROR_IN_RESPONSE, true);
+    }
+
+    public static String getExceptionMappersPackage() {
+        return "com.github.madz0.revolut.exception";
     }
 
     @RequiredArgsConstructor

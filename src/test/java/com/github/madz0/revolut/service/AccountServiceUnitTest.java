@@ -1,6 +1,7 @@
 package com.github.madz0.revolut.service;
 
 import com.github.madz0.revolut.AbstractUnitTest;
+import com.github.madz0.revolut.exception.DataIntegrityException;
 import com.github.madz0.revolut.exception.ExternalServiceException;
 import com.github.madz0.revolut.exception.RestIllegalArgumentException;
 import com.github.madz0.revolut.exception.RestUnsupportedOperationException;
@@ -199,19 +200,32 @@ public class AccountServiceUnitTest extends AbstractUnitTest {
             number.append("9");
         }
         account.setAmount(new BigDecimal(number.toString()));
-        accountService.create(account);
+        accountService.update(account);
     }
 
-    @Test(expected = RestIllegalArgumentException.class)
-    public void updateEntity_whenCurrencyIsNull_shouldThrowsIllegalArgException() {
-        accountRepository = new AccountRepositoryImpl(null);
+    @Test
+    public void updateEntity_whenCurrencyIsNull_shouldStillWorks() {
+        accountRepository = mock(AccountRepository.class);
+        accountRepository = mock(AccountRepository.class);
+        doAnswer(invocationOnMock -> {
+            Long id = invocationOnMock.getArgument(0);
+            if (id == null || id <= 0 || (id != 1)) {
+                return invocationOnMock.callRealMethod();
+            } else {
+                Account account = new Account();
+                account.setAmount(BigDecimal.TEN);
+                account.setCurrency(Currency.USD);
+                account.setId(1L);
+                return Optional.of(account);
+            }
+        }).when(accountRepository).findById(Mockito.anyLong());
         accountService = new AccountService(accountRepository, null, null, null);
         Account account = new Account();
         account.setId(1L);
         account.setVersion(1L);
         account.setCurrency(null);
         account.setAmount(new BigDecimal("1"));
-        accountService.create(account);
+        accountService.update(account);
     }
 
     @Test
@@ -410,7 +424,7 @@ public class AccountServiceUnitTest extends AbstractUnitTest {
         accountService.makeTransfer(transfer);
     }
 
-    @Test(expected = RestIllegalArgumentException.class)
+    @Test(expected = DataIntegrityException.class)
     public void makeTransferWithInvalidSenderTest_shouldThrowsIllegalArg() {
         BigDecimal fromOriginalAmount = BigDecimal.TEN;
         BigDecimal toOriginalAmount = BigDecimal.TEN;
@@ -438,7 +452,7 @@ public class AccountServiceUnitTest extends AbstractUnitTest {
         accountService.makeTransfer(transfer);
     }
 
-    @Test(expected = RestIllegalArgumentException.class)
+    @Test(expected = DataIntegrityException.class)
     public void makeTransferWithInvalidReceiverTest_shouldThrowsIllegalArg() {
         BigDecimal fromOriginalAmount = BigDecimal.TEN;
         BigDecimal toOriginalAmount = BigDecimal.TEN;

@@ -16,10 +16,10 @@ import java.math.BigDecimal;
 @Table(name = "accounts")
 public class Account extends BaseModel {
     @Enumerated(EnumType.STRING)
-    @NotNull(groups = {Create.class, UpdateCurrency.class}, message = "Wrong value for currency")
+    @NotNull(groups = Create.class, message = "Wrong value for currency")
     private Currency currency;
 
-    @NotNull(groups = {Create.class, UpdateAmount.class}, message = "Wrong value for money")
+    @NotNull(groups = {Create.class, Update.class}, message = "Wrong value for money")
     @Digits(integer = MAX_SUPPORTED_MONEY, fraction = MAX_SUPPORTED_MONEY_FRACTION, message = "Wrong value for money")
     @Column(columnDefinition = "DECIMAL(" + (MAX_SUPPORTED_MONEY + SUPPORTED_MONEY_SAFE_GUARD) + ", " + MAX_SUPPORTED_MONEY_FRACTION + ")", nullable = false)
     private BigDecimal amount;
@@ -33,11 +33,5 @@ public class Account extends BaseModel {
     }
 
     public interface Create {
-    }
-
-    public interface UpdateCurrency extends Update {
-    }
-
-    public interface UpdateAmount extends Update {
     }
 }
