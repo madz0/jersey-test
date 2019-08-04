@@ -70,14 +70,35 @@ public class AccountsResourceIntegrationTest extends JerseyTest {
                 .queryParam("pageSize", 10).request().get();
         assertEquals("Http Response should be " + Response.Status.OK.getStatusCode(),
                 Response.Status.OK.getStatusCode(), response.getStatus());
+        String json = response.readEntity(String.class);
+        assertTrue("TotalSize should be 3, page should be 0, pageSize 10", json.contains("\"totalSize\":3,\"page\":0,\"pageSize\":10"));
+        assertTrue("There should be contents", json.contains("{\"contents\":[{"));
     }
 
     @Test
-    public void get() {
+    public void get_whenProperRequest_thenOkAndContainsResourceData() {
+        setupForSuccessfulGet();
+        Response response = target(BASE_PATH+"/1").request().get();
+        assertEquals("Http Response should be " + Response.Status.OK.getStatusCode(),
+                Response.Status.OK.getStatusCode(), response.getStatus());
+        String json = response.readEntity(String.class);
+        assertTrue("There should be id and version in the response", json.contains("{\"id\":1,\"version\":"));
     }
 
     @Test
     public void update() {
+        setupForSuccessfulGet();
+        Account account1 = new Account();
+        account1.setAmount(BigDecimal.TEN);
+        account1.setCurrency(Currency.USD);
+        account1.setId(1L);
+        account1.setVersion(1L);
+        Response response = target(BASE_PATH+"/1").request(MediaType.APPLICATION_JSON_TYPE)
+                .put(Entity.entity(account1, MediaType.APPLICATION_JSON_TYPE));
+        assertEquals("Http Response should be " + Response.Status.OK.getStatusCode(),
+                Response.Status.OK.getStatusCode(), response.getStatus());
+        String json = response.readEntity(String.class);
+        assertTrue("There should be id and version in the response", json.contains("{\"id\":1,\"version\":"));
     }
 
     @Test
@@ -118,6 +139,7 @@ public class AccountsResourceIntegrationTest extends JerseyTest {
             account1.setAmount(BigDecimal.TEN);
             account1.setCurrency(Currency.USD);
             account1.setId(1L);
+            account1.setVersion(1L);
             return account1;
         }).when(accountService).findById(anyLong());
     }
