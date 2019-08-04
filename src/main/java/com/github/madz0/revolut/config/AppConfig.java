@@ -33,12 +33,16 @@ public class AppConfig extends ResourceConfig {
         register(AccountsResource.class);
         register(JerseyObjectMapperProvider.class);
         register(JacksonFeature.class);
-        packages(getExceptionMappersPackage());
-        property(ServerProperties.BV_SEND_ERROR_IN_RESPONSE, true);
+        registerExceptionMappersPackage(this);
+        registerBeanValidationResponse(this);
     }
 
-    public static String getExceptionMappersPackage() {
-        return "com.github.madz0.revolut.exception";
+    public static void registerExceptionMappersPackage(ResourceConfig resourceConfig) {
+        resourceConfig.packages("com.github.madz0.revolut.exception");
+    }
+
+    public static void registerBeanValidationResponse(ResourceConfig resourceConfig) {
+        resourceConfig.property(ServerProperties.BV_SEND_ERROR_IN_RESPONSE, true);
     }
 
     @RequiredArgsConstructor

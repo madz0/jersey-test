@@ -33,14 +33,16 @@ public class AccountsResource {
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
     public Response list(@QueryParam("page") int page, @QueryParam("pageSize") int pageSize) {
-        return Response.ok(accountService.findAll(page, pageSize)).build();
+        return Response.ok(accountService.findAll(page, pageSize, account -> account.setRoundMoney(true))).build();
     }
 
     @GET
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response get(@PathParam("id") Long id) {
-        return Response.ok(accountService.findById(id)).build();
+        Account account = accountService.findById(id);
+        account.setRoundMoney(true);
+        return Response.ok(account).build();
     }
 
     @PUT

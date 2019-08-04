@@ -16,6 +16,7 @@ import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
 import java.math.BigDecimal;
+import java.util.function.Consumer;
 
 import static com.github.madz0.revolut.util.CurrencyUtils.getDigitsCount;
 import static com.github.madz0.revolut.util.CurrencyUtils.getFractionsCount;
@@ -57,6 +58,14 @@ public class AccountService {
             pageSize = DEFAULT_PAGE_SIZE;
         }
         return accountRepository.findAll(page, pageSize);
+    }
+
+    public Page<Account> findAll(int page, int pageSize, Consumer<Account> accountConsumer) {
+        Page<Account> accountPage = findAll(page, pageSize);
+        if (accountConsumer != null) {
+            accountPage.getContents().forEach(accountConsumer);
+        }
+        return accountPage;
     }
 
     public Transfer makeTransfer(Transfer transfer) {

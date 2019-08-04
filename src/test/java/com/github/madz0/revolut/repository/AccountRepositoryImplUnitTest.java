@@ -1,6 +1,7 @@
 package com.github.madz0.revolut.repository;
 
 import com.github.madz0.revolut.AbstractUnitTest;
+import com.github.madz0.revolut.exception.RestIllegalArgumentException;
 import com.github.madz0.revolut.model.Account;
 import com.github.madz0.revolut.model.Currency;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,7 +43,7 @@ class AccountRepositoryImplUnitTest extends AbstractUnitTest {
     @Test
     void findByIdWith_nullId_shouldThrowIllegalArgumentException() {
         accountRepository = new AccountRepositoryImpl(entityManager);
-        assertThrows(IllegalArgumentException.class, () -> accountRepository.findById(null));
+        assertThrows(RestIllegalArgumentException.class, () -> accountRepository.findById(null));
     }
 
     @Test
@@ -85,7 +86,7 @@ class AccountRepositoryImplUnitTest extends AbstractUnitTest {
 
     @Test
     void findAll_wrongPageSize_shouldThrowIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(RestIllegalArgumentException.class, () -> {
             accountRepository = new AccountRepositoryImpl(entityManager);
             int page = 0;
             int pageSize = 0;
@@ -95,14 +96,14 @@ class AccountRepositoryImplUnitTest extends AbstractUnitTest {
 
     @Test
     void findAll_biggerPageThanTotalSize_shouldThrowIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(RestIllegalArgumentException.class, () -> {
             final TypedQueryMocked<Long> queryMockedTotalSize = new TypedQueryMocked<>();
             doAnswer(invocationOnMock -> {
                 queryMockedTotalSize.setResultSet(Collections.singletonList(3L));
                 return queryMockedTotalSize;
             }).when(entityManager).createQuery(eq("select count (a.id) from Account a"), eq(Long.class));
             accountRepository = new AccountRepositoryImpl(entityManager);
-            int page = 1;
+            int page = 4;
             int pageSize = 3;
             accountRepository.findAll(page, pageSize);
         });
@@ -110,7 +111,7 @@ class AccountRepositoryImplUnitTest extends AbstractUnitTest {
 
     @Test
     void findForUpdateById_nullId_shouldThrowIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(RestIllegalArgumentException.class, () -> {
             accountRepository = new AccountRepositoryImpl(entityManager);
             accountRepository.findForUpdateById(null);
         });

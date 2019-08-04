@@ -146,7 +146,29 @@ public class AccountServiceUnitTest extends AbstractUnitTest {
             }
         }).when(accountRepository).save(Mockito.any(Account.class));
         accountService = new AccountService(accountRepository, null, null, null);
-        Account account = new Account();
+        final Account account = new Account();
+        account.setId(1L);
+        account.setAmount(BigDecimal.TEN);
+        account.setCurrency(Currency.USD);
+        account.setVersion(1L);
+        doAnswer(invocationOnMock -> Optional.of(account)).when(accountRepository).findById(eq(1L));
+        Account savedAccount = accountService.update(account);
+        assertNotNull(savedAccount);
+    }
+
+    @Test(expected = DataIntegrityException.class)
+    public void updateTest_whenEntityDoesNotExist_throwsDataIntegrityException() {
+        accountRepository = mock(AccountRepository.class);
+        doAnswer(invocationOnMock -> {
+            Account acc = invocationOnMock.getArgument(0);
+            if (acc == null) {
+                return invocationOnMock.callRealMethod();
+            } else {
+                return acc;
+            }
+        }).when(accountRepository).save(Mockito.any(Account.class));
+        accountService = new AccountService(accountRepository, null, null, null);
+        final Account account = new Account();
         account.setId(1L);
         account.setAmount(BigDecimal.TEN);
         account.setCurrency(Currency.USD);

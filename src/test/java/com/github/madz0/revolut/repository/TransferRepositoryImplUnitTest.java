@@ -2,6 +2,7 @@ package com.github.madz0.revolut.repository;
 
 import com.github.madz0.revolut.AbstractUnitTest;
 import com.github.madz0.revolut.exception.DbQueryException;
+import com.github.madz0.revolut.exception.RestIllegalArgumentException;
 import com.github.madz0.revolut.model.Account;
 import com.github.madz0.revolut.model.Currency;
 import com.github.madz0.revolut.model.Transfer;
@@ -84,7 +85,7 @@ class TransferRepositoryImplUnitTest extends AbstractUnitTest {
         TransferRepository transferRepository = new TransferRepositoryImpl(entityManager);
         int page = 0;
         int pageSize = 0;
-        assertThrows(IllegalArgumentException.class, () -> transferRepository.findAllByAccountId(1L, page, pageSize));
+        assertThrows(RestIllegalArgumentException.class, () -> transferRepository.findAllByAccountId(1L, page, pageSize));
     }
 
     @Test

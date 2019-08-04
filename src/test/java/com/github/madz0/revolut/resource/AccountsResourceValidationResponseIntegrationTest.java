@@ -3,6 +3,7 @@ package com.github.madz0.revolut.resource;
 import com.github.madz0.revolut.config.AppConfig;
 import com.github.madz0.revolut.exception.*;
 import com.github.madz0.revolut.model.Account;
+import com.github.madz0.revolut.model.BaseModel;
 import com.github.madz0.revolut.model.Currency;
 import com.github.madz0.revolut.model.Transfer;
 import com.github.madz0.revolut.service.AccountService;
@@ -24,34 +25,79 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
-public class AccountsResourceExceptionsResponseIntegrationTest extends JerseyTest {
-    @Mock
-    AccountService accountService;
+public class AccountsResourceValidationResponseIntegrationTest extends JerseyTest {
 
     @Override
     protected Application configure() {
         forceSet(TestProperties.CONTAINER_PORT, "0");
-        MockitoAnnotations.initMocks(this);
-        ResourceConfig resourceConfig = new ResourceConfig().register(new AccountsResource(accountService));
-        AppConfig.registerExceptionMappersPackage(resourceConfig);
+        ResourceConfig resourceConfig = new ResourceConfig().register(new AccountsResource(null));
+        AppConfig.registerBeanValidationResponse(resourceConfig);
         return resourceConfig;
     }
 
     @Test
-    public void create_whenThrowsRestIllegalArgException_thenBadRequest() {
-        setupForRestIllegalArgCreate();
+    public void create_whenPostNullAmount_thenBadRequest() {
         Account account = new Account();
         account.setCurrency(Currency.USD);
+        account.setAmount(null);
+        Response response = target(BASE_PATH).request(MediaType.APPLICATION_JSON_TYPE)
+                .post(Entity.entity(account, MediaType.APPLICATION_JSON_TYPE));
+        assertEquals("Http Response should be " + Response.Status.BAD_REQUEST.getStatusCode(),
+                Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        String json = response.readEntity(String.class);
+        assertTrue(json.contains("Wrong value for money"));
+    }
+
+    @Test
+    public void create_whenPostNullCurrency_thenBadRequest() {
+        Account account = new Account();
+        account.setCurrency(null);
         account.setAmount(BigDecimal.TEN);
         Response response = target(BASE_PATH).request(MediaType.APPLICATION_JSON_TYPE)
                 .post(Entity.entity(account, MediaType.APPLICATION_JSON_TYPE));
         assertEquals("Http Response should be " + Response.Status.BAD_REQUEST.getStatusCode(),
                 Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        String json = response.readEntity(String.class);
+        assertTrue(json.contains("Wrong value for currency"));
+    }
+
+    @Test
+    public void create_whenPostTooBigAmount_thenBadRequest() {
+        Account account = new Account();
+        account.setCurrency(Currency.USD);
+        StringBuilder number = new StringBuilder();
+        for (int i = 0; i <= BaseModel.MAX_SUPPORTED_MONEY; i++) {
+            number.append("9");
+        }
+        account.setAmount(new BigDecimal(number.toString()));
+        Response response = target(BASE_PATH).request(MediaType.APPLICATION_JSON_TYPE)
+                .post(Entity.entity(account, MediaType.APPLICATION_JSON_TYPE));
+        assertEquals("Http Response should be " + Response.Status.BAD_REQUEST.getStatusCode(),
+                Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        String json = response.readEntity(String.class);
+        assertTrue(json.contains("Unsupported value for money"));
+    }
+
+    @Test
+    public void create_whenPostTooBigAmountFraction_thenBadRequest() {
+        Account account = new Account();
+        account.setCurrency(Currency.USD);
+        StringBuilder number = new StringBuilder();
+        number.append("9.");
+        for (int i = 0; i <= BaseModel.MAX_SUPPORTED_MONEY_FRACTION; i++) {
+            number.append("9");
+        }
+        account.setAmount(new BigDecimal(number.toString()));
+        Response response = target(BASE_PATH).request(MediaType.APPLICATION_JSON_TYPE)
+                .post(Entity.entity(account, MediaType.APPLICATION_JSON_TYPE));
+        assertEquals("Http Response should be " + Response.Status.BAD_REQUEST.getStatusCode(),
+                Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        String json = response.readEntity(String.class);
+        assertTrue(json.contains("Unsupported value for money"));
     }
 
     @Test
     public void list_whenThrowsRestUnsupportedException_thenBadRequest() {
-        setupForRestUnsupportedExceptionList();
         Response response = target(BASE_PATH)
                 .queryParam("page", 0)
                 .queryParam("pageSize", 10).request().get();
@@ -61,7 +107,6 @@ public class AccountsResourceExceptionsResponseIntegrationTest extends JerseyTes
 
     @Test
     public void get_whenDataIntegrationException_thenNotFound() {
-        dataIntegrityExceptionGet();
         Response response = target(BASE_PATH + "/1").request().get();
         assertEquals("Http Response should be " + Response.Status.NOT_FOUND.getStatusCode(),
                 Response.Status.NOT_FOUND.getStatusCode(), response.getStatus());
@@ -69,7 +114,6 @@ public class AccountsResourceExceptionsResponseIntegrationTest extends JerseyTes
 
     @Test
     public void update_ConcurrentModificationEx_thenConflict() {
-        setupForConcurrentModificationExUpdate();
         Account account1 = new Account();
         account1.setAmount(BigDecimal.TEN);
         account1.setCurrency(Currency.USD);
@@ -83,7 +127,6 @@ public class AccountsResourceExceptionsResponseIntegrationTest extends JerseyTes
 
     @Test
     public void transfer_whenDbQueryException_thenInternalServerErrorAndContainsErrorCode() {
-        setupForDbQueryExceptionTransfer();
         Account from = new Account();
         from.setId(1L);
         Account to = new Account();
@@ -99,7 +142,6 @@ public class AccountsResourceExceptionsResponseIntegrationTest extends JerseyTes
 
     @Test
     public void transfer_whenUncaughtException_thenInternalServerErrorAndContainsErrorCode() {
-        setupForUnCaughtExceptionTransfer();
         Account from = new Account();
         from.setId(1L);
         Account to = new Account();
@@ -111,29 +153,5 @@ public class AccountsResourceExceptionsResponseIntegrationTest extends JerseyTes
                 Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
         String json = response.readEntity(String.class);
         assertTrue("Response should contain error code", json.toLowerCase().contains("code"));
-    }
-
-    private void setupForRestIllegalArgCreate() {
-        doThrow(RestIllegalArgumentException.class).when(accountService).create(any(Account.class));
-    }
-
-    private void setupForRestUnsupportedExceptionList() {
-        doThrow(RestUnsupportedOperationException.class).when(accountService).findAll(anyInt(), anyInt());
-    }
-
-    private void dataIntegrityExceptionGet() {
-        doThrow(DataIntegrityException.class).when(accountService).findById(anyLong());
-    }
-
-    private void setupForConcurrentModificationExUpdate() {
-        doThrow(RestConcurrentModificationException.class).when(accountService).update(any(Account.class));
-    }
-
-    private void setupForDbQueryExceptionTransfer() {
-        doThrow(DbQueryException.class).when(accountService).makeTransfer(any(Transfer.class));
-    }
-
-    private void setupForUnCaughtExceptionTransfer() {
-        doThrow(ArithmeticException.class).when(accountService).makeTransfer(any(Transfer.class));
     }
 }
