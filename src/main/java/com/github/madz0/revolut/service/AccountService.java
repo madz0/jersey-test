@@ -123,10 +123,10 @@ public class AccountService {
             throw new RestIllegalArgumentException("transfer was null");
         }
         if (transfer.getFromAccountId() == null || transfer.getFromAccountId() <= 0) {
-            throw new RestIllegalArgumentException("transfer source was illegal");
+            throw new RestIllegalArgumentException("transfer source id was illegal");
         }
         if (transfer.getToAccountId() == null || transfer.getToAccountId() <= 0) {
-            throw new RestIllegalArgumentException("transfer destination was illegal");
+            throw new RestIllegalArgumentException("transfer destination id was illegal");
         }
         if (transfer.getToAccountId().equals(transfer.getFromAccountId())) {
             throw new RestIllegalArgumentException("transfer source and destination was the same");

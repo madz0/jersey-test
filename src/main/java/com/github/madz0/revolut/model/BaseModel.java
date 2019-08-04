@@ -1,5 +1,6 @@
 package com.github.madz0.revolut.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -21,16 +22,24 @@ public abstract class BaseModel implements Serializable {
     public final static int MAX_SUPPORTED_MONEY_FRACTION = 4;
     public final static int MAX_SUPPORTED_MONEY = 19;
     public final static int SUPPORTED_MONEY_SAFE_GUARD = 4;
+
+    @JsonIgnore
+    @Transient
+    private transient boolean roundMoney = false;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(nullable = false)
-    @NotNull(groups = Update.class)
     protected Long id;
+
     @Version
+    @NotNull(groups = Update.class, message = "version is mandatory for update")
     protected Long version;
+
     @Temporal(TemporalType.TIMESTAMP)
     protected Date createdDate;
     protected Time createdTime;
+
     @Temporal(TemporalType.TIMESTAMP)
     protected Date modifiedDate;
     protected Time modifiedTime;

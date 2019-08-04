@@ -36,6 +36,39 @@ public class AccountsResourceValidationResponseIntegrationTest extends JerseyTes
     }
 
     @Test
+    public void request_whenPathIsNotExists_thenNotFound() {
+        Account account = new Account();
+        account.setCurrency(Currency.USD);
+        account.setAmount(null);
+        Response response = target("/wrong/path").request(MediaType.APPLICATION_JSON_TYPE)
+                .post(Entity.entity(account, MediaType.APPLICATION_JSON_TYPE));
+        assertEquals("Http Response should be " + Response.Status.NOT_FOUND.getStatusCode(),
+                Response.Status.NOT_FOUND.getStatusCode(), response.getStatus());
+    }
+
+    @Test
+    public void request_whenMethodIsWrong_thenMethodNotAllowed() {
+        Account account = new Account();
+        account.setCurrency(Currency.USD);
+        account.setAmount(null);
+        Response response = target(BASE_PATH + "/1").request(MediaType.APPLICATION_JSON_TYPE)
+                .post(Entity.entity(account, MediaType.APPLICATION_JSON_TYPE));
+        assertEquals("Http Response should be " + Response.Status.METHOD_NOT_ALLOWED.getStatusCode(),
+                Response.Status.METHOD_NOT_ALLOWED.getStatusCode(), response.getStatus());
+    }
+
+    @Test
+    public void create_whenJsonDataIsMalformedRequest_thenRespondBadRequest() {
+        Account account = new Account();
+        account.setCurrency(null);
+        account.setAmount(BigDecimal.TEN);
+        Response response = target(BASE_PATH).request(MediaType.APPLICATION_JSON_TYPE)
+                .post(Entity.json("Hey I'm malformed"));
+        assertEquals("Http Response should be " + Response.Status.BAD_REQUEST.getStatusCode(),
+                Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+    }
+
+    @Test
     public void create_whenPostNullAmount_thenBadRequest() {
         Account account = new Account();
         account.setCurrency(Currency.USD);
@@ -59,6 +92,32 @@ public class AccountsResourceValidationResponseIntegrationTest extends JerseyTes
                 Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
         String json = response.readEntity(String.class);
         assertTrue(json.contains("Wrong value for currency"));
+    }
+
+    @Test
+    public void create_whenPostNegativeAmount_thenBadRequest() {
+        Account account = new Account();
+        account.setCurrency(Currency.USD);
+        account.setAmount(new BigDecimal("-1"));
+        Response response = target(BASE_PATH).request(MediaType.APPLICATION_JSON_TYPE)
+                .post(Entity.entity(account, MediaType.APPLICATION_JSON_TYPE));
+        assertEquals("Http Response should be " + Response.Status.BAD_REQUEST.getStatusCode(),
+                Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        String json = response.readEntity(String.class);
+        assertTrue(json.contains("Unsupported value for money"));
+    }
+
+    @Test
+    public void create_whenPostZeroAmount_thenBadRequest() {
+        Account account = new Account();
+        account.setCurrency(Currency.USD);
+        account.setAmount(BigDecimal.ZERO);
+        Response response = target(BASE_PATH).request(MediaType.APPLICATION_JSON_TYPE)
+                .post(Entity.entity(account, MediaType.APPLICATION_JSON_TYPE));
+        assertEquals("Http Response should be " + Response.Status.BAD_REQUEST.getStatusCode(),
+                Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        String json = response.readEntity(String.class);
+        assertTrue(json.contains("Unsupported value for money"));
     }
 
     @Test
@@ -97,61 +156,215 @@ public class AccountsResourceValidationResponseIntegrationTest extends JerseyTes
     }
 
     @Test
-    public void list_whenThrowsRestUnsupportedException_thenBadRequest() {
-        Response response = target(BASE_PATH)
-                .queryParam("page", 0)
-                .queryParam("pageSize", 10).request().get();
+    public void create_whenCurrencyIsNotValidRequest_thenRespondBadRequest() {
+        Account account = new Account();
+        account.setCurrency(null);
+        account.setAmount(BigDecimal.TEN);
+        Response response = target(BASE_PATH).request(MediaType.APPLICATION_JSON_TYPE)
+                .post(Entity.json("{\"amount\":\"10\", \"currency\":\"INVALID_CURRENCY\"}"));
         assertEquals("Http Response should be " + Response.Status.BAD_REQUEST.getStatusCode(),
                 Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
     }
 
     @Test
-    public void get_whenDataIntegrationException_thenNotFound() {
-        Response response = target(BASE_PATH + "/1").request().get();
-        assertEquals("Http Response should be " + Response.Status.NOT_FOUND.getStatusCode(),
-                Response.Status.NOT_FOUND.getStatusCode(), response.getStatus());
-    }
-
-    @Test
-    public void update_ConcurrentModificationEx_thenConflict() {
+    public void update_whenPostNullAmount_thenBadRequest() {
         Account account1 = new Account();
-        account1.setAmount(BigDecimal.TEN);
+        account1.setAmount(null);
         account1.setCurrency(Currency.USD);
-        account1.setId(1L);
         account1.setVersion(1L);
         Response response = target(BASE_PATH + "/1").request(MediaType.APPLICATION_JSON_TYPE)
                 .put(Entity.entity(account1, MediaType.APPLICATION_JSON_TYPE));
-        assertEquals("Http Response should be " + Response.Status.CONFLICT.getStatusCode(),
-                Response.Status.CONFLICT.getStatusCode(), response.getStatus());
+        assertEquals("Http Response should be " + Response.Status.BAD_REQUEST.getStatusCode(),
+                Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        String json = response.readEntity(String.class);
+        assertTrue(json.contains("Wrong value for money"));
     }
 
     @Test
-    public void transfer_whenDbQueryException_thenInternalServerErrorAndContainsErrorCode() {
+    public void update_whenPostNullVersion_thenBadRequest() {
+        Account account1 = new Account();
+        account1.setAmount(BigDecimal.TEN);
+        account1.setCurrency(Currency.USD);
+        Response response = target(BASE_PATH + "/1").request(MediaType.APPLICATION_JSON_TYPE)
+                .put(Entity.entity(account1, MediaType.APPLICATION_JSON_TYPE));
+        assertEquals("Http Response should be " + Response.Status.BAD_REQUEST.getStatusCode(),
+                Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        String json = response.readEntity(String.class);
+        assertTrue(json.contains("version is mandatory for update"));
+    }
+
+    @Test
+    public void update_whenPostNegativeAmount_thenBadRequest() {
+        Account account = new Account();
+        account.setCurrency(Currency.USD);
+        account.setAmount(new BigDecimal("-1"));
+        Response response = target(BASE_PATH + "/1").request(MediaType.APPLICATION_JSON_TYPE)
+                .put(Entity.entity(account, MediaType.APPLICATION_JSON_TYPE));
+        assertEquals("Http Response should be " + Response.Status.BAD_REQUEST.getStatusCode(),
+                Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        String json = response.readEntity(String.class);
+        assertTrue(json.contains("Unsupported value for money"));
+    }
+
+    @Test
+    public void update_whenPostZeroAmount_thenBadRequest() {
+        Account account = new Account();
+        account.setCurrency(Currency.USD);
+        account.setAmount(BigDecimal.ZERO);
+        Response response = target(BASE_PATH + "/1").request(MediaType.APPLICATION_JSON_TYPE)
+                .put(Entity.entity(account, MediaType.APPLICATION_JSON_TYPE));
+        assertEquals("Http Response should be " + Response.Status.BAD_REQUEST.getStatusCode(),
+                Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        String json = response.readEntity(String.class);
+        assertTrue(json.contains("Unsupported value for money"));
+    }
+
+    @Test
+    public void update_whenPostTooBigAmount_thenBadRequest() {
+        Account account = new Account();
+        account.setCurrency(Currency.USD);
+        StringBuilder number = new StringBuilder();
+        for (int i = 0; i <= BaseModel.MAX_SUPPORTED_MONEY; i++) {
+            number.append("9");
+        }
+        account.setAmount(new BigDecimal(number.toString()));
+        Response response = target(BASE_PATH + "/1").request(MediaType.APPLICATION_JSON_TYPE)
+                .put(Entity.entity(account, MediaType.APPLICATION_JSON_TYPE));
+        assertEquals("Http Response should be " + Response.Status.BAD_REQUEST.getStatusCode(),
+                Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        String json = response.readEntity(String.class);
+        assertTrue(json.contains("Unsupported value for money"));
+    }
+
+    @Test
+    public void update_whenPostTooBigAmountFraction_thenBadRequest() {
+        Account account = new Account();
+        account.setCurrency(Currency.USD);
+        StringBuilder number = new StringBuilder();
+        number.append("9.");
+        for (int i = 0; i <= BaseModel.MAX_SUPPORTED_MONEY_FRACTION; i++) {
+            number.append("9");
+        }
+        account.setAmount(new BigDecimal(number.toString()));
+        Response response = target(BASE_PATH + "/1").request(MediaType.APPLICATION_JSON_TYPE)
+                .put(Entity.entity(account, MediaType.APPLICATION_JSON_TYPE));
+        assertEquals("Http Response should be " + Response.Status.BAD_REQUEST.getStatusCode(),
+                Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        String json = response.readEntity(String.class);
+        assertTrue(json.contains("Unsupported value for money"));
+    }
+
+    @Test
+    public void transfer_whenAmountIsNull_thenBadRequest() {
         Account from = new Account();
         from.setId(1L);
         Account to = new Account();
         to.setId(2L);
-        Transfer transfer = new Transfer(from, to, BigDecimal.TEN, Currency.USD, Currency.EUR, null);
+        Transfer transfer = new Transfer(from, to, null, null, null, null);
         Response response = target(BASE_PATH + "/transfers").request(MediaType.APPLICATION_JSON_TYPE)
                 .post(Entity.entity(transfer, MediaType.APPLICATION_JSON_TYPE));
-        assertEquals("Http Response should be " + Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
-                Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
+        assertEquals("Http Response should be " + Response.Status.BAD_REQUEST.getStatusCode(),
+                Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
         String json = response.readEntity(String.class);
-        assertTrue("Response should contain error code", json.toLowerCase().contains("code"));
+        assertTrue("Response should contain Wrong value for money", json.contains("Wrong value for money"));
     }
 
     @Test
-    public void transfer_whenUncaughtException_thenInternalServerErrorAndContainsErrorCode() {
+    public void transfer_whenFromIsNull_thenBadRequest() {
         Account from = new Account();
         from.setId(1L);
         Account to = new Account();
         to.setId(2L);
-        Transfer transfer = new Transfer(from, to, BigDecimal.TEN, Currency.USD, Currency.EUR, null);
+        Transfer transfer = new Transfer(null, to, BigDecimal.TEN, null, null, null);
         Response response = target(BASE_PATH + "/transfers").request(MediaType.APPLICATION_JSON_TYPE)
                 .post(Entity.entity(transfer, MediaType.APPLICATION_JSON_TYPE));
-        assertEquals("Http Response should be " + Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
-                Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
+        assertEquals("Http Response should be " + Response.Status.BAD_REQUEST.getStatusCode(),
+                Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
         String json = response.readEntity(String.class);
-        assertTrue("Response should contain error code", json.toLowerCase().contains("code"));
+        assertTrue("Response should contain Wrong value for from account", json.contains("Wrong value for from account"));
+    }
+
+    @Test
+    public void transfer_whenToIsNull_thenBadRequest() {
+        Account from = new Account();
+        from.setId(1L);
+        Account to = new Account();
+        to.setId(2L);
+        Transfer transfer = new Transfer(from, null, BigDecimal.TEN, null, null, null);
+        Response response = target(BASE_PATH + "/transfers").request(MediaType.APPLICATION_JSON_TYPE)
+                .post(Entity.entity(transfer, MediaType.APPLICATION_JSON_TYPE));
+        assertEquals("Http Response should be " + Response.Status.BAD_REQUEST.getStatusCode(),
+                Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        String json = response.readEntity(String.class);
+        assertTrue("Response should contain Wrong value for from account", json.contains("Wrong value for to account"));
+    }
+
+    @Test
+    public void transfer_whenMoneyIsTooBig_thenBadRequest() {
+        Account from = new Account();
+        from.setId(1L);
+        Account to = new Account();
+        to.setId(2L);
+        StringBuilder number = new StringBuilder();
+        for (int i = 0; i <= BaseModel.MAX_SUPPORTED_MONEY; i++) {
+            number.append("9");
+        }
+        Transfer transfer = new Transfer(from, to, new BigDecimal(number.toString()), null, null, null);
+        Response response = target(BASE_PATH + "/transfers").request(MediaType.APPLICATION_JSON_TYPE)
+                .post(Entity.entity(transfer, MediaType.APPLICATION_JSON_TYPE));
+        assertEquals("Http Response should be " + Response.Status.BAD_REQUEST.getStatusCode(),
+                Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        String json = response.readEntity(String.class);
+        assertTrue("Response should contain Unsupported value for amount", json.contains("Unsupported value for amount"));
+    }
+
+    @Test
+    public void transfer_whenMoneyFractionIsMuch_thenBadRequest() {
+        Account from = new Account();
+        from.setId(1L);
+        Account to = new Account();
+        to.setId(2L);
+        StringBuilder number = new StringBuilder();
+        number.append("9.");
+        for (int i = 0; i <= BaseModel.MAX_SUPPORTED_MONEY_FRACTION; i++) {
+            number.append("9");
+        }
+        Transfer transfer = new Transfer(from, to, new BigDecimal(number.toString()), null, null, null);
+        Response response = target(BASE_PATH + "/transfers").request(MediaType.APPLICATION_JSON_TYPE)
+                .post(Entity.entity(transfer, MediaType.APPLICATION_JSON_TYPE));
+        assertEquals("Http Response should be " + Response.Status.BAD_REQUEST.getStatusCode(),
+                Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        String json = response.readEntity(String.class);
+        assertTrue("Response should contain Unsupported value for amount", json.contains("Unsupported value for amount"));
+    }
+
+    @Test
+    public void transfer_whenAmountIsZero_thenBadRequest() {
+        Account from = new Account();
+        from.setId(1L);
+        Account to = new Account();
+        to.setId(2L);
+        Transfer transfer = new Transfer(from, to, new BigDecimal("0"), null, null, null);
+        Response response = target(BASE_PATH + "/transfers").request(MediaType.APPLICATION_JSON_TYPE)
+                .post(Entity.entity(transfer, MediaType.APPLICATION_JSON_TYPE));
+        assertEquals("Http Response should be " + Response.Status.BAD_REQUEST.getStatusCode(),
+                Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        String json = response.readEntity(String.class);
+        assertTrue("Response should contain Unsupported value for amount", json.contains("Unsupported value for amount"));
+    }
+
+    @Test
+    public void transfer_whenAmountIsNegative_thenBadRequest() {
+        Account from = new Account();
+        from.setId(1L);
+        Account to = new Account();
+        to.setId(2L);
+        Transfer transfer = new Transfer(from, to, new BigDecimal("-0.1"), null, null, null);
+        Response response = target(BASE_PATH + "/transfers").request(MediaType.APPLICATION_JSON_TYPE)
+                .post(Entity.entity(transfer, MediaType.APPLICATION_JSON_TYPE));
+        assertEquals("Http Response should be " + Response.Status.BAD_REQUEST.getStatusCode(),
+                Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        String json = response.readEntity(String.class);
+        assertTrue("Response should contain Unsupported value for amount", json.contains("Unsupported value for amount"));
     }
 }

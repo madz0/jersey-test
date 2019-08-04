@@ -51,18 +51,6 @@ public class AccountsResourceSuccessIntegrationTest extends JerseyTest {
     }
 
     @Test
-    public void create_whenCurrencyIsNotValidRequest_thenRespondBadRequest() {
-        Account account = new Account();
-        account.setCurrency(null);
-        account.setAmount(BigDecimal.TEN);
-        Response response = target(BASE_PATH).request(MediaType.APPLICATION_JSON_TYPE)
-                .post(Entity.json("{\"amount\":\"10\", \"currency\":\"XXX\"}"));
-        assertEquals("Http Response should be " + Response.Status.BAD_REQUEST.getStatusCode(),
-                Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
-    }
-
-
-    @Test
     public void list_whenProperRequest_thenOkAndContainsPageData() {
         setupForSuccessfulFindAll();
         Response response = target(BASE_PATH)

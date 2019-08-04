@@ -11,7 +11,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.*;
+import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.Digits;
+import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -27,16 +29,20 @@ public class Transfer extends BaseModel {
     public final static int EXCHANGE_RATE_MAX_DIGITS = 13;
     public final static int EXCHANGE_RATE_MAX_FRAGMENTS = 4;
     @JsonIgnore
+    @NotNull(message = "Wrong value for from account")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "from_account_id")
     private Account from;
 
     @JsonIgnore
+    @NotNull(message = "Wrong value for to account")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "to_account_id")
     private Account to;
 
-    @Digits(integer = MAX_SUPPORTED_MONEY, fraction = MAX_SUPPORTED_MONEY_FRACTION, message = "Wrong value for money")
+    @NotNull(message = "Wrong value for money")
+    @DecimalMin(value = "0.000001", message = "Unsupported value for amount")
+    @Digits(integer = MAX_SUPPORTED_MONEY, fraction = MAX_SUPPORTED_MONEY_FRACTION, message = "Unsupported value for amount")
     @Column(columnDefinition = "DECIMAL(" + (MAX_SUPPORTED_MONEY + SUPPORTED_MONEY_SAFE_GUARD) + ", " + MAX_SUPPORTED_MONEY_FRACTION + ")", nullable = false)
     private BigDecimal amount;
 
@@ -95,6 +101,10 @@ public class Transfer extends BaseModel {
 
     @JsonGetter("amount")
     public BigDecimal getRoundedAmount() {
+        if (!isRoundMoney()) {
+            return amount;
+        }
+
         if (fromCurrency == null || amount == null) {
             return null;
         }

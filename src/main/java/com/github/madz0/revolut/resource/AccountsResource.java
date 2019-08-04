@@ -62,7 +62,7 @@ public class AccountsResource {
     @Path("/transfers")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response transfer(Transfer transfer) throws URISyntaxException {
+    public Response transfer(@Valid Transfer transfer) throws URISyntaxException {
         return Response.created(new URI(BASE_PATH + "/" + transfer.getFromAccountId() + "/transfers/" + accountService.makeTransfer(transfer).getId())).build();
     }
 }
