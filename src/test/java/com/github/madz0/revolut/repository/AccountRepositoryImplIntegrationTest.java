@@ -1,13 +1,10 @@
 package com.github.madz0.revolut.repository;
 
-import com.github.madz0.revolut.config.AppConfig;
 import com.github.madz0.revolut.model.Account;
 import com.github.madz0.revolut.model.Currency;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
-
 import java.math.BigDecimal;
 import java.util.Optional;
 

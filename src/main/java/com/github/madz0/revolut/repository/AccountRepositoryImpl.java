@@ -1,6 +1,7 @@
 package com.github.madz0.revolut.repository;
 
 import com.github.madz0.revolut.exception.DbQueryException;
+import com.github.madz0.revolut.exception.RestIllegalArgumentException;
 import com.github.madz0.revolut.model.Account;
 
 import javax.inject.Inject;
@@ -11,6 +12,7 @@ import java.util.Optional;
 
 public class AccountRepositoryImpl extends AbstractRepository<Account> implements AccountRepository {
     private final EntityManager entityManager;
+
     @Inject
     public AccountRepositoryImpl(EntityManager entityManager) {
         super(entityManager);
@@ -20,7 +22,7 @@ public class AccountRepositoryImpl extends AbstractRepository<Account> implement
     @Override
     public Optional<Account> findById(Long id) {
         if (id == null || id <= 0) {
-            throw new IllegalArgumentException("id");
+            throw new RestIllegalArgumentException("id");
         }
         try {
             return Optional.ofNullable(entityManager.find(Account.class, id));
@@ -32,10 +34,10 @@ public class AccountRepositoryImpl extends AbstractRepository<Account> implement
     @Override
     public Page<Account> findAll(int page, int size) {
         if (page < 0) {
-            throw new IllegalArgumentException("page<0");
+            throw new RestIllegalArgumentException("page<0");
         }
         if (size <= 0) {
-            throw new IllegalArgumentException("size<=0");
+            throw new RestIllegalArgumentException("size<=0");
         }
 
         long totalSize;
@@ -46,10 +48,11 @@ public class AccountRepositoryImpl extends AbstractRepository<Account> implement
         }
 
         if (page * size > totalSize) {
-            throw new IllegalArgumentException("page value is bigger than result set size");
+            throw new RestIllegalArgumentException("page value is bigger than result set size");
         }
         try {
-            List<Account> accounts = entityManager.createQuery("select a from Account a", Account.class)
+            List<Account> accounts = entityManager.createQuery(
+                    "select a from Account a", Account.class)
                     .setFirstResult(page * size)
                     .setMaxResults(size)
                     .getResultList();
@@ -62,7 +65,7 @@ public class AccountRepositoryImpl extends AbstractRepository<Account> implement
     @Override
     public Optional<Account> findForUpdateById(Long id) {
         if (id == null || id <= 0) {
-            throw new IllegalArgumentException("id");
+            throw new RestIllegalArgumentException("id");
         }
         try {
             return Optional.ofNullable(entityManager.find(Account.class, id, LockModeType.PESSIMISTIC_WRITE));

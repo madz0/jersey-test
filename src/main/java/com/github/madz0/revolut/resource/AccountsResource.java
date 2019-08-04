@@ -1,6 +1,5 @@
 package com.github.madz0.revolut.resource;
 
-import com.github.madz0.revolut.config.Config;
 import com.github.madz0.revolut.model.Account;
 import com.github.madz0.revolut.model.Transfer;
 import com.github.madz0.revolut.service.AccountService;
@@ -13,15 +12,10 @@ import javax.ws.rs.core.Response;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import static com.github.madz0.revolut.Main.APP_URL_KEY;
-
 @RequiredArgsConstructor(onConstructor = @__(@Inject))
 @Path(AccountsResource.BASE_PATH)
 public class AccountsResource {
     final static String BASE_PATH = "/api/accounts";
-
-    @Config(APP_URL_KEY)
-    private String baseUrl;
     private final AccountService accountService;
 
     @POST
@@ -29,7 +23,7 @@ public class AccountsResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response create(Account account) throws URISyntaxException {
-        return Response.created(new URI(baseUrl + BASE_PATH + "/" + accountService.create(account).getId())).build();
+        return Response.created(new URI(BASE_PATH + "/" + accountService.create(account).getId())).build();
     }
 
     @GET
@@ -60,6 +54,6 @@ public class AccountsResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response transfer(Transfer transfer) throws URISyntaxException {
-        return Response.created(new URI(baseUrl + BASE_PATH + "/" + transfer.getFromAccountId() + "/transfers/" + accountService.makeTransfer(transfer).getId())).build();
+        return Response.created(new URI(BASE_PATH + "/" + transfer.getFromAccountId() + "/transfers/" + accountService.makeTransfer(transfer).getId())).build();
     }
 }

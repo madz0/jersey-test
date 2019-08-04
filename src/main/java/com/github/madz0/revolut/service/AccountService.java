@@ -2,6 +2,8 @@ package com.github.madz0.revolut.service;
 
 import com.github.madz0.revolut.exception.DataIntegrityException;
 import com.github.madz0.revolut.exception.ExternalServiceException;
+import com.github.madz0.revolut.exception.RestIllegalArgumentException;
+import com.github.madz0.revolut.exception.RestUnsupportedOperationException;
 import com.github.madz0.revolut.model.Account;
 import com.github.madz0.revolut.model.BaseModel;
 import com.github.madz0.revolut.model.Transfer;
@@ -27,7 +29,7 @@ public class AccountService {
     private final TransferRepository transferRepository;
 
     public Account findById(Long id) {
-        return accountRepository.findById(id).orElseThrow(() -> new DataIntegrityException("Could not find id " + id));
+        return accountRepository.findById(id).orElseThrow(() -> new DataIntegrityException(null, "Could not find id " + id));
     }
 
     public Account create(Account account) {
@@ -56,11 +58,11 @@ public class AccountService {
         EntityTransaction transaction = entityManager.getTransaction();
         try {
             transaction.begin();
-            Account from = accountRepository.findForUpdateById(transfer.getFromAccountId()).orElseThrow(() -> new IllegalArgumentException("transfer from id " + transfer.getFromAccountId() + " was invalid"));
-            Account to = accountRepository.findForUpdateById(transfer.getToAccountId()).orElseThrow(() -> new IllegalArgumentException("transfer destination id " + transfer.getToAccountId() + " was invalid"));
+            Account from = accountRepository.findForUpdateById(transfer.getFromAccountId()).orElseThrow(() -> new DataIntegrityException(null, "transfer source id " + transfer.getFromAccountId() + " was not found"));
+            Account to = accountRepository.findForUpdateById(transfer.getToAccountId()).orElseThrow(() -> new DataIntegrityException(null, "transfer destination id " + transfer.getToAccountId() + " was not found"));
             //Check if from's account is sufficient for requested amount of transfer
             if (from.getAmount().compareTo(transfer.getAmount()) < 0) {
-                throw new IllegalArgumentException("Insufficient amount in account " + from.getId());
+                throw new RestIllegalArgumentException("Insufficient amount in account " + from.getId());
             }
             BigDecimal exchangeRate = BigDecimal.ONE;
             if (from.getCurrency() != to.getCurrency()) {
@@ -68,7 +70,7 @@ public class AccountService {
                     exchangeRate = currencyService.getExchangeRateOf(from.getCurrency(), to.getCurrency());
                     assertReceivedExchangeRate(exchangeRate);
                 } catch (Exception e) {
-                    throw new ExternalServiceException("Currency service call exception converting " + from.getCurrency() + ", to " + to.getCurrency(), e);
+                    throw new ExternalServiceException("Currency service call exception converting " + from.getCurrency() + ", to " + to.getCurrency(), null, e);
                 }
             }
             BigDecimal toAdd = calculateToAddAmount(to.getAmount(), transfer.getAmount(), exchangeRate);
@@ -103,29 +105,29 @@ public class AccountService {
 
     private void assertTransferIllegalFields(Transfer transfer) {
         if (transfer == null) {
-            throw new IllegalArgumentException("transfer was null");
+            throw new RestIllegalArgumentException("transfer was null");
         }
         if (transfer.getFromAccountId() == null || transfer.getFromAccountId() <= 0) {
-            throw new IllegalArgumentException("transfer source was illegal");
+            throw new RestIllegalArgumentException("transfer source was illegal");
         }
         if (transfer.getToAccountId() == null || transfer.getToAccountId() <= 0) {
-            throw new IllegalArgumentException("transfer destination was illegal");
+            throw new RestIllegalArgumentException("transfer destination was illegal");
         }
         if (transfer.getToAccountId().equals(transfer.getFromAccountId())) {
-            throw new IllegalArgumentException("transfer source and destination was the same");
+            throw new RestIllegalArgumentException("transfer source and destination was the same");
         }
         if (transfer.getAmount() == null || transfer.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("transfer amount must be bigger than 0");
+            throw new RestIllegalArgumentException("transfer amount must be bigger than 0");
         }
         assertBigDecimalWithAllocatedSize(transfer.getAmount());
     }
 
     private void assertBigDecimalWithAllocatedSize(BigDecimal bigDecimal) {
         if (getDigitsCount(bigDecimal) > BaseModel.MAX_SUPPORTED_MONEY) {
-            throw new IllegalArgumentException("transfer amount is bigger than allocated size");
+            throw new RestIllegalArgumentException("transfer amount is bigger than allocated size");
         }
         if (getFractionsCount(bigDecimal) > BaseModel.MAX_SUPPORTED_MONEY_FRACTION) {
-            throw new IllegalArgumentException("transfer amount is bigger than allocated size");
+            throw new RestIllegalArgumentException("transfer amount is bigger than allocated size");
         }
     }
 
@@ -133,38 +135,41 @@ public class AccountService {
         BigDecimal toAdd = current.add(transferred.multiply(exchangeRate));
         if (getDigitsCount(toAdd) > Account.MAX_SUPPORTED_MONEY + Account.SUPPORTED_MONEY_SAFE_GUARD ||
                 getFractionsCount(toAdd) > Account.MAX_SUPPORTED_MONEY_FRACTION) {
-            throw new UnsupportedOperationException("Calculated money is too big " + toAdd);
+            throw new RestUnsupportedOperationException("Calculated money is too big " + toAdd);
         }
         return toAdd;
     }
 
     private void assertAccountBeforeSave(Account account) {
         if (account == null) {
-            throw new IllegalArgumentException("Null account");
+            throw new RestIllegalArgumentException("Null account");
         }
         if (account.getAmount() == null) {
-            throw new IllegalArgumentException("Account amount is null");
+            throw new RestIllegalArgumentException("Account amount is null");
+        }
+        if (account.getCurrency() == null) {
+            throw new RestIllegalArgumentException("Account currency is null");
         }
         if (account.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Account amount equals or smaller than 0");
+            throw new RestIllegalArgumentException("Account amount equals or smaller than 0");
         }
     }
 
     private void assertAccountBeforeCreate(Account account) {
         if (account.getId() != null) {
-            throw new IllegalArgumentException("Id should be null for creating");
+            throw new RestIllegalArgumentException("Id should be null for creating");
         }
         if (account.getVersion() != null) {
-            throw new IllegalArgumentException("Version should be null for creating");
+            throw new RestIllegalArgumentException("Version should be null for creating");
         }
     }
 
     private void assertAccountBeforeUpdate(Account account) {
         if (account.getId() == null || account.getId() <= 0) {
-            throw new IllegalArgumentException("Cannot update without proper id field (not null and > 0), id =" + account.getId());
+            throw new RestIllegalArgumentException("Cannot update without proper id field (not null and > 0), id =" + account.getId());
         }
         if (account.getVersion() == null || account.getVersion() <= 0) {
-            throw new IllegalArgumentException("Cannot update without proper version field (not null and > 0), version =" + account.getVersion());
+            throw new RestIllegalArgumentException("Cannot update without proper version field (not null and > 0), version =" + account.getVersion());
         }
     }
 
@@ -174,7 +179,7 @@ public class AccountService {
         }
         if (getDigitsCount(exchangeRate) > Transfer.EXCHANGE_RATE_MAX_DIGITS ||
                 getFractionsCount(exchangeRate) > Transfer.EXCHANGE_RATE_MAX_FRAGMENTS) {
-            throw new UnsupportedOperationException("Returned exchange rate was too big " + exchangeRate);
+            throw new RestUnsupportedOperationException("Returned exchange rate was too big " + exchangeRate);
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.github.madz0.revolut.repository;
 
 import com.github.madz0.revolut.exception.DbQueryException;
+import com.github.madz0.revolut.exception.RestIllegalArgumentException;
 import com.github.madz0.revolut.model.Transfer;
 
 import javax.inject.Inject;
@@ -24,11 +25,11 @@ public class TransferRepositoryImpl extends AbstractRepository<Transfer> impleme
                     .setParameter("accountId", accountId)
                     .getSingleResult();
         } catch (Exception e) {
-            throw new DbQueryException("Failed to execute count query. accountId=" + accountId, e);
+            throw new DbQueryException("Failed to execute count query. accountId = " + accountId, e);
         }
 
         if (page * size >= totalSize) {
-            throw new IllegalArgumentException("page value is bigger than result set size");
+            throw new RestIllegalArgumentException("page value is bigger than result set size");
         }
 
         try {
@@ -45,13 +46,13 @@ public class TransferRepositoryImpl extends AbstractRepository<Transfer> impleme
 
     private void assertIllegalArguments(Long accountId, int page, int size) {
         if (page < 0) {
-            throw new IllegalArgumentException("page<0");
+            throw new RestIllegalArgumentException("page<0");
         }
         if (size <= 0) {
-            throw new IllegalArgumentException("size<=0");
+            throw new RestIllegalArgumentException("size<=0");
         }
         if (accountId == null || accountId <= 0) {
-            throw new IllegalArgumentException("accountId<=0");
+            throw new RestIllegalArgumentException("accountId<=0");
         }
     }
 }

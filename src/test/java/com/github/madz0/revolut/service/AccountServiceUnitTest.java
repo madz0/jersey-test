@@ -2,6 +2,8 @@ package com.github.madz0.revolut.service;
 
 import com.github.madz0.revolut.AbstractUnitTest;
 import com.github.madz0.revolut.exception.ExternalServiceException;
+import com.github.madz0.revolut.exception.RestIllegalArgumentException;
+import com.github.madz0.revolut.exception.RestUnsupportedOperationException;
 import com.github.madz0.revolut.model.Account;
 import com.github.madz0.revolut.model.BaseModel;
 import com.github.madz0.revolut.model.Currency;
@@ -55,7 +57,7 @@ public class AccountServiceUnitTest extends AbstractUnitTest {
         assertEquals(generatedId, (long) savedAccount.getId());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = RestIllegalArgumentException.class)
     public void getAccountByIdWrongIdTest_shouldReceivesIllegalArgException() {
         accountRepository = new AccountRepositoryImpl(null);
         accountService = new AccountService(accountRepository, null, null, null);
@@ -84,32 +86,32 @@ public class AccountServiceUnitTest extends AbstractUnitTest {
         assertEquals(generatedId, (long) savedAccount.getId());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = RestIllegalArgumentException.class)
     public void createNullEntityTest_shouldThrowsIllegalArgException() {
         accountRepository = new AccountRepositoryImpl(null);
         accountService = new AccountService(accountRepository, null, null, null);
         accountService.create(null);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = RestIllegalArgumentException.class)
     public void createEntityWithNotNullIdTest_shouldThrowsIllegalArgException() {
         accountRepository = new AccountRepositoryImpl(null);
         accountService = new AccountService(accountRepository, null, null, null);
         Account account = new Account();
         account.setId(1L);
-        accountService.create(null);
+        accountService.create(account);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = RestIllegalArgumentException.class)
     public void createEntityWithNotNullVersionTest_shouldThrowsIllegalArgException() {
         accountRepository = new AccountRepositoryImpl(null);
         accountService = new AccountService(accountRepository, null, null, null);
         Account account = new Account();
         account.setVersion(1L);
-        accountService.create(null);
+        accountService.create(account);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = RestIllegalArgumentException.class)
     public void createEntityWithLargerMoneyThanWeSupported_shouldThrowsIllegalArgException() {
         accountRepository = new AccountRepositoryImpl(null);
         accountService = new AccountService(accountRepository, null, null, null);
@@ -119,6 +121,15 @@ public class AccountServiceUnitTest extends AbstractUnitTest {
             number.append("9");
         }
         account.setAmount(new BigDecimal(number.toString()));
+        accountService.create(account);
+    }
+
+    @Test(expected = RestIllegalArgumentException.class)
+    public void createEntityWithNullCurrency_shouldThrowsIllegalArgException() {
+        accountRepository = new AccountRepositoryImpl(null);
+        accountService = new AccountService(accountRepository, null, null, null);
+        Account account = new Account();
+        account.setAmount(new BigDecimal("1"));
         accountService.create(account);
     }
 
@@ -143,23 +154,23 @@ public class AccountServiceUnitTest extends AbstractUnitTest {
         assertNotNull(savedAccount);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = RestIllegalArgumentException.class)
     public void updateNullEntityTest_shouldThrowsIllegalArgException() {
         accountRepository = new AccountRepositoryImpl(null);
         accountService = new AccountService(accountRepository, null, null, null);
         accountService.update(null);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = RestIllegalArgumentException.class)
     public void updateEntityWithWrongIdTest_shouldThrowsIllegalArgException() {
         accountRepository = new AccountRepositoryImpl(null);
         accountService = new AccountService(accountRepository, null, null, null);
         Account account = new Account();
         account.setId(-1L);
-        accountService.update(null);
+        accountService.update(account);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = RestIllegalArgumentException.class)
     public void updateEntityWithNullIdTest_shouldThrowsIllegalArgException() {
         accountRepository = new AccountRepositoryImpl(null);
         accountService = new AccountService(accountRepository, null, null, null);
@@ -167,7 +178,7 @@ public class AccountServiceUnitTest extends AbstractUnitTest {
         accountService.update(account);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = RestIllegalArgumentException.class)
     public void updateEntityWithWrongVersionTest_shouldThrowsIllegalArgException() {
         accountRepository = new AccountRepositoryImpl(null);
         accountService = new AccountService(accountRepository, null, null, null);
@@ -176,7 +187,7 @@ public class AccountServiceUnitTest extends AbstractUnitTest {
         accountService.update(account);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = RestIllegalArgumentException.class)
     public void updateEntityWithLargerMoneyThanWeSupported_shouldThrowsIllegalArgException() {
         accountRepository = new AccountRepositoryImpl(null);
         accountService = new AccountService(accountRepository, null, null, null);
@@ -188,6 +199,18 @@ public class AccountServiceUnitTest extends AbstractUnitTest {
             number.append("9");
         }
         account.setAmount(new BigDecimal(number.toString()));
+        accountService.create(account);
+    }
+
+    @Test(expected = RestIllegalArgumentException.class)
+    public void updateEntity_whenCurrencyIsNull_shouldThrowsIllegalArgException() {
+        accountRepository = new AccountRepositoryImpl(null);
+        accountService = new AccountService(accountRepository, null, null, null);
+        Account account = new Account();
+        account.setId(1L);
+        account.setVersion(1L);
+        account.setCurrency(null);
+        account.setAmount(new BigDecimal("1"));
         accountService.create(account);
     }
 
@@ -229,14 +252,14 @@ public class AccountServiceUnitTest extends AbstractUnitTest {
         assertEquals(1, (long) accountPage.getContents().get(0).getId());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = RestIllegalArgumentException.class)
     public void findAllWithWrongPageSizeTest_shouldThrowIllegalArgException() {
         accountRepository = new AccountRepositoryImpl(null);
         accountService = new AccountService(accountRepository, null, null, null);
         accountService.findAll(0, -1);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = RestIllegalArgumentException.class)
     public void findAllWithWrongPageTest_shouldThrowIllegalArgException() {
         accountRepository = new AccountRepositoryImpl(null);
         accountService = new AccountService(accountRepository, null, null, null);
@@ -293,13 +316,13 @@ public class AccountServiceUnitTest extends AbstractUnitTest {
         assertEquals("amount of added amount for receiver should be correct", toOriginalAmount.add(transfer.getAmount().multiply(exchangeRateFromUsdToEur)), toInDb.getAmount());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = RestIllegalArgumentException.class)
     public void makeTransferNullTransferObjectTest_shouldThrowsIllegalArg() {
         accountService = new AccountService(accountRepository, mockEntityManagerTransaction(), currencyService, transferRepository);
         accountService.makeTransfer(null);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = RestIllegalArgumentException.class)
     public void makeTransferNullTransferSenderIdTest_shouldThrowsIllegalArg() {
         accountService = new AccountService(accountRepository, mockEntityManagerTransaction(), currencyService, transferRepository);
         Account to = new Account();
@@ -308,7 +331,7 @@ public class AccountServiceUnitTest extends AbstractUnitTest {
         accountService.makeTransfer(transfer);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = RestIllegalArgumentException.class)
     public void makeTransferNullTransferReceiverIdTest_shouldThrowsIllegalArg() {
         accountService = new AccountService(accountRepository, mockEntityManagerTransaction(), currencyService, transferRepository);
         Account from = new Account();
@@ -317,7 +340,7 @@ public class AccountServiceUnitTest extends AbstractUnitTest {
         accountService.makeTransfer(transfer);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = RestIllegalArgumentException.class)
     public void makeTransferFromAnAccountToItselfTest_shouldThrowsIllegalArg() {
         accountService = new AccountService(accountRepository, mockEntityManagerTransaction(), currencyService, transferRepository);
         Account from = new Account();
@@ -328,7 +351,7 @@ public class AccountServiceUnitTest extends AbstractUnitTest {
         accountService.makeTransfer(transfer);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = RestIllegalArgumentException.class)
     public void makeTransferWithNullAmountTest_shouldThrowsIllegalArg() {
         accountService = new AccountService(accountRepository, mockEntityManagerTransaction(), currencyService, transferRepository);
         Account from = new Account();
@@ -339,7 +362,7 @@ public class AccountServiceUnitTest extends AbstractUnitTest {
         accountService.makeTransfer(transfer);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = RestIllegalArgumentException.class)
     public void makeTransferWithZeroAmountTest_shouldThrowsIllegalArg() {
         accountService = new AccountService(accountRepository, mockEntityManagerTransaction(), currencyService, transferRepository);
         Account from = new Account();
@@ -350,7 +373,7 @@ public class AccountServiceUnitTest extends AbstractUnitTest {
         accountService.makeTransfer(transfer);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = RestIllegalArgumentException.class)
     public void makeTransferWithSmallerThanZeroAmountTest_shouldThrowsIllegalArg() {
         accountService = new AccountService(accountRepository, mockEntityManagerTransaction(), currencyService, transferRepository);
         Account from = new Account();
@@ -361,7 +384,7 @@ public class AccountServiceUnitTest extends AbstractUnitTest {
         accountService.makeTransfer(transfer);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = RestIllegalArgumentException.class)
     public void makeTransferWithBiggerDigitsThanWeSupportTest_shouldThrowsIllegalArg() {
         accountService = new AccountService(accountRepository, mockEntityManagerTransaction(), currencyService, transferRepository);
         Account from = new Account();
@@ -376,7 +399,7 @@ public class AccountServiceUnitTest extends AbstractUnitTest {
         accountService.makeTransfer(transfer);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = RestIllegalArgumentException.class)
     public void makeTransferWithBiggerFractionThanWeSupportTest_shouldThrowsIllegalArg() {
         accountService = new AccountService(accountRepository, mockEntityManagerTransaction(), currencyService, transferRepository);
         Account from = new Account();
@@ -387,7 +410,7 @@ public class AccountServiceUnitTest extends AbstractUnitTest {
         accountService.makeTransfer(transfer);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = RestIllegalArgumentException.class)
     public void makeTransferWithInvalidSenderTest_shouldThrowsIllegalArg() {
         BigDecimal fromOriginalAmount = BigDecimal.TEN;
         BigDecimal toOriginalAmount = BigDecimal.TEN;
@@ -415,7 +438,7 @@ public class AccountServiceUnitTest extends AbstractUnitTest {
         accountService.makeTransfer(transfer);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = RestIllegalArgumentException.class)
     public void makeTransferWithInvalidReceiverTest_shouldThrowsIllegalArg() {
         BigDecimal fromOriginalAmount = BigDecimal.TEN;
         BigDecimal toOriginalAmount = BigDecimal.TEN;
@@ -443,7 +466,7 @@ public class AccountServiceUnitTest extends AbstractUnitTest {
         accountService.makeTransfer(transfer);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = RestIllegalArgumentException.class)
     public void makeTransferWithInsufficientMoneyInSenderAccountTest_shouldThrowsIllegalArg() {
         BigDecimal fromOriginalAmount = BigDecimal.ONE;
         BigDecimal toOriginalAmount = BigDecimal.TEN;
@@ -508,7 +531,7 @@ public class AccountServiceUnitTest extends AbstractUnitTest {
         accountService.makeTransfer(transfer);
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test(expected = RestUnsupportedOperationException.class)
     public void makeTransferWithBigAmountAccountTest_shouldThrowUnsupportedOperation() {
         StringBuilder number = new StringBuilder();
         for (int i = 0; i < BaseModel.MAX_SUPPORTED_MONEY + BaseModel.SUPPORTED_MONEY_SAFE_GUARD; i++) {

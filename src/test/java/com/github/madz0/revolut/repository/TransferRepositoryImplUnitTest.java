@@ -17,7 +17,8 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
 
 class TransferRepositoryImplUnitTest extends AbstractUnitTest {
     private EntityManager entityManager;

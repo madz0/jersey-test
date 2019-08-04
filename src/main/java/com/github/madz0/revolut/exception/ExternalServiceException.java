@@ -1,7 +1,11 @@
 package com.github.madz0.revolut.exception;
 
-public class ExternalServiceException extends RuntimeException {
-    public ExternalServiceException(String message, Throwable e) {
-        super(message, e);
+public class ExternalServiceException extends BaseRuntimeException {
+    public ExternalServiceException(String confidentialMessage, String generalMessage) {
+        super(confidentialMessage, generalMessage);
+    }
+
+    public ExternalServiceException(String confidentialMessage, String generalMessage, Throwable cause) {
+        super(confidentialMessage, generalMessage, cause);
     }
 }

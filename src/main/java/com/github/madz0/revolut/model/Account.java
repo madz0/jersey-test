@@ -26,6 +26,9 @@ public class Account extends BaseModel {
 
     @JsonGetter("amount")
     public BigDecimal roundAmount() {
+        if (currency == null) {
+            return null;
+        }
         return CurrencyUtils.getRounded(currency.getFraction(), amount);
     }
 

@@ -32,6 +32,7 @@ public class AppConfig extends ResourceConfig {
         register(AccountsResource.class);
         register(JerseyObjectMapperProvider.class);
         register(JacksonFeature.class);
+        packages("com.github.madz0.revolut.exception");
     }
 
     @RequiredArgsConstructor
