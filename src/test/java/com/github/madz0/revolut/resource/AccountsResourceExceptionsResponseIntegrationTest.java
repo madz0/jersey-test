@@ -119,6 +119,7 @@ public class AccountsResourceExceptionsResponseIntegrationTest extends JerseyTes
 
     private void setupForRestUnsupportedExceptionList() {
         doThrow(RestUnsupportedOperationException.class).when(accountService).findAll(anyInt(), anyInt());
+        doThrow(RestUnsupportedOperationException.class).when(accountService).findAll(anyInt(), anyInt(), any());
     }
 
     private void dataIntegrityExceptionGet() {

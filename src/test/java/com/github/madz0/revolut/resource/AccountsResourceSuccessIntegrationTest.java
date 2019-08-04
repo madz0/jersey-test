@@ -127,7 +127,7 @@ public class AccountsResourceSuccessIntegrationTest extends JerseyTest {
             account3.setId(3L);
             List<Account> accountList = Arrays.asList(account1, account2, account3);
             return new Page<>(accountList, 3, invocationOnMock.getArgument(0), invocationOnMock.getArgument(1));
-        }).when(accountService).findAll(anyInt(), anyInt());
+        }).when(accountService).findAll(anyInt(), anyInt(), any());
     }
 
     private void setupForSuccessfulGet() {

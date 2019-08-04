@@ -32,6 +32,7 @@ public class AccountsResourceValidationResponseIntegrationTest extends JerseyTes
         forceSet(TestProperties.CONTAINER_PORT, "0");
         ResourceConfig resourceConfig = new ResourceConfig().register(new AccountsResource(null));
         AppConfig.registerBeanValidationResponse(resourceConfig);
+        AppConfig.registerExceptionMappersPackage(resourceConfig);
         return resourceConfig;
     }
 

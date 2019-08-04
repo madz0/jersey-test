@@ -18,7 +18,7 @@ import java.net.URISyntaxException;
 @RequiredArgsConstructor(onConstructor = @__(@Inject))
 @Path(AccountsResource.BASE_PATH)
 public class AccountsResource {
-    final static String BASE_PATH = "/api/accounts";
+    final static String BASE_PATH = "/revolut/api/accounts";
     private final AccountService accountService;
 
     @POST
