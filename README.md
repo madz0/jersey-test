@@ -1,6 +1,6 @@
-#Revolut REST API TEST
+# Revolut REST API TEST
 
-##Build & run
+## Build & run
 
 ```bash
 mvn clean install
@@ -126,7 +126,7 @@ _No body_ +
 
 ```
 
-##Tests
+## Tests
 
 Tests are split into unit tests and integration tests both are configured 
 for different phases.
