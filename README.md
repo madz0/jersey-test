@@ -17,6 +17,7 @@ curl -v -d '{"amount":"10", "currency":"USD"}' -H "Content-Type: application/jso
 curl -v -d '{"amount":"10", "currency":"EUR"}' -H "Content-Type: application/json" -X POST 'http://localhost:9998/revolut/api/accounts'
 curl -v -X GET 'http://localhost:9998/revolut/api/accounts?page=0&pageSize=10'
 curl -v -X GET 'http://localhost:9998/revolut/api/accounts/1'
+curl -v -d '{"amount":"20", "version": 0}' -H "Content-Type: application/json" -X PUT 'http://localhost:9998/revolut/api/accounts/1'
 curl -v -d '{"amount":"10", "from":{"id":1}, "to":{"id":2}}' -H "Content-Type: application/json" -X POST 'http://localhost:9998/revolut/api/accounts/transfers'
 curl -v -X GET http://localhost:9998/revolut/api/accounts/1/transfers/1
 curl -v -X GET 'http://localhost:9998/revolut/api/accounts/1/transfers?page=0&pageSize=10'
