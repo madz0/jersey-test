@@ -8,6 +8,7 @@ import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
 import java.util.List;
+import java.util.Optional;
 
 public class TransferRepositoryImpl extends AbstractRepository<Transfer> implements TransferRepository {
 
@@ -17,8 +18,16 @@ public class TransferRepositoryImpl extends AbstractRepository<Transfer> impleme
     }
 
     @Override
+    public Optional<Transfer> findTransferByAccountIdAndId(Long accountId, Long transferId) {
+        assertFindTransferByAccountIdAndIdIllegalArguments(accountId, transferId);
+        return Optional.ofNullable(entityManager.createQuery("select t from Transfer t where t.id = :transferId and t.from.id = :accountId", Transfer.class)
+                .setParameter("transferId", transferId).setParameter("accountId", accountId)
+                .getSingleResult());
+    }
+
+    @Override
     public Page<Transfer> findAllByAccountId(Long accountId, int page, int size) {
-        assertIllegalArguments(accountId, page, size);
+        assertFindAllIllegalArguments(accountId, page, size);
         long totalSize;
         EntityTransaction transaction = entityManager.getTransaction();
         try {
@@ -31,7 +40,7 @@ public class TransferRepositoryImpl extends AbstractRepository<Transfer> impleme
                 throw new DbQueryException("Failed to execute count query. accountId = " + accountId, e);
             }
 
-            if (page * size >= totalSize) {
+            if (((long) page) * size > totalSize) {
                 throw new RestIllegalArgumentException("page value is bigger than result set size");
             }
 
@@ -52,7 +61,7 @@ public class TransferRepositoryImpl extends AbstractRepository<Transfer> impleme
         }
     }
 
-    private void assertIllegalArguments(Long accountId, int page, int size) {
+    private void assertFindAllIllegalArguments(Long accountId, int page, int size) {
         if (page < 0) {
             throw new RestIllegalArgumentException("page<0");
         }
@@ -61,6 +70,15 @@ public class TransferRepositoryImpl extends AbstractRepository<Transfer> impleme
         }
         if (accountId == null || accountId <= 0) {
             throw new RestIllegalArgumentException("accountId<=0");
+        }
+    }
+
+    private void assertFindTransferByAccountIdAndIdIllegalArguments(Long accountId, Long transferId) {
+        if (accountId == null || accountId <= 0) {
+            throw new RestIllegalArgumentException("page<0");
+        }
+        if (transferId == null || transferId <= 0) {
+            throw new RestIllegalArgumentException("size<=0");
         }
     }
 }

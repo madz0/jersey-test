@@ -1,9 +1,8 @@
 package com.github.madz0.revolut.model;
 
 import com.fasterxml.jackson.annotation.JsonGetter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.github.madz0.revolut.util.CurrencyUtils;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -23,18 +22,22 @@ import java.time.ZoneId;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "transfers", indexes = {@Index(name = "from_account_id", columnList = "from_account_id"), @Index(name = "to_account_id", columnList = "to_account_id")})
+@Table(name = "transfers", indexes = {
+        @Index(name = "from_account_id", columnList = "from_account_id"),
+        @Index(name = "to_account_id", columnList = "to_account_id")
+})
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Transfer extends BaseModel {
     public final static int EXCHANGE_RATE_MAX_DIGITS = 13;
     public final static int EXCHANGE_RATE_MAX_FRAGMENTS = 4;
-    @JsonIgnore
+
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @NotNull(message = "Wrong value for from account")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "from_account_id")
     private Account from;
 
-    @JsonIgnore
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @NotNull(message = "Wrong value for to account")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "to_account_id")
@@ -42,8 +45,11 @@ public class Transfer extends BaseModel {
 
     @NotNull(message = "Wrong value for money")
     @DecimalMin(value = "0.000001", message = "Unsupported value for amount")
-    @Digits(integer = MAX_SUPPORTED_MONEY, fraction = MAX_SUPPORTED_MONEY_FRACTION, message = "Unsupported value for amount")
-    @Column(columnDefinition = "DECIMAL(" + (MAX_SUPPORTED_MONEY + SUPPORTED_MONEY_SAFE_GUARD) + ", " + MAX_SUPPORTED_MONEY_FRACTION + ")", nullable = false)
+    @Digits(integer = MAX_SUPPORTED_MONEY, fraction = MAX_SUPPORTED_MONEY_FRACTION,
+            message = "Unsupported value for amount")
+    @Column(columnDefinition = "DECIMAL(" + (MAX_SUPPORTED_MONEY
+            + SUPPORTED_MONEY_SAFE_GUARD) + ", " + MAX_SUPPORTED_MONEY_FRACTION + ")",
+            nullable = false)
     private BigDecimal amount;
 
     @Enumerated(EnumType.STRING)
@@ -52,7 +58,8 @@ public class Transfer extends BaseModel {
     @Enumerated(EnumType.STRING)
     private Currency toCurrency;
 
-    @Column(columnDefinition = "DECIMAL(" + EXCHANGE_RATE_MAX_DIGITS + ", " + EXCHANGE_RATE_MAX_FRAGMENTS + ")", nullable = false)
+    @Column(columnDefinition = "DECIMAL(" + EXCHANGE_RATE_MAX_DIGITS + ", "
+            + EXCHANGE_RATE_MAX_FRAGMENTS + ")", nullable = false)
     private BigDecimal exchangeRate;
 
     @JsonGetter("destinationAmount")
@@ -60,7 +67,8 @@ public class Transfer extends BaseModel {
         if (toCurrency == null || amount == null || exchangeRate == null) {
             return null;
         }
-        return CurrencyUtils.getRounded(toCurrency.getFraction(), amount.multiply(exchangeRate));
+        return CurrencyUtils.getRounded(toCurrency.getFraction(),
+                amount.multiply(exchangeRate));
     }
 
     @JsonGetter
@@ -77,16 +85,6 @@ public class Transfer extends BaseModel {
             return null;
         }
         return to.getId();
-    }
-
-    @JsonSetter
-    public void setFrom(Account account) {
-        this.from = account;
-    }
-
-    @JsonSetter
-    public void setTo(Account account) {
-        this.to = account;
     }
 
     @JsonGetter

@@ -145,13 +145,13 @@ public class AccountServiceUnitTest extends AbstractUnitTest {
                 return acc;
             }
         }).when(accountRepository).save(Mockito.any(Account.class));
-        accountService = new AccountService(accountRepository, null, null, null);
+        accountService = new AccountService(accountRepository, mockEntityManagerTransaction(), null, null);
         final Account account = new Account();
         account.setId(1L);
         account.setAmount(BigDecimal.TEN);
         account.setCurrency(Currency.USD);
         account.setVersion(1L);
-        doAnswer(invocationOnMock -> Optional.of(account)).when(accountRepository).findById(eq(1L));
+        doAnswer(invocationOnMock -> Optional.of(account)).when(accountRepository).findForUpdateById(eq(1L));
         Account savedAccount = accountService.update(account);
         assertNotNull(savedAccount);
     }
@@ -159,20 +159,13 @@ public class AccountServiceUnitTest extends AbstractUnitTest {
     @Test(expected = DataIntegrityException.class)
     public void updateTest_whenEntityDoesNotExist_throwsDataIntegrityException() {
         accountRepository = mock(AccountRepository.class);
-        doAnswer(invocationOnMock -> {
-            Account acc = invocationOnMock.getArgument(0);
-            if (acc == null) {
-                return invocationOnMock.callRealMethod();
-            } else {
-                return acc;
-            }
-        }).when(accountRepository).save(Mockito.any(Account.class));
-        accountService = new AccountService(accountRepository, null, null, null);
+        accountService = new AccountService(accountRepository, mockEntityManagerTransaction(), null, null);
         final Account account = new Account();
         account.setId(1L);
         account.setAmount(BigDecimal.TEN);
         account.setCurrency(Currency.USD);
         account.setVersion(1L);
+        doAnswer(invocationOnMock -> Optional.empty()).when(accountRepository).findForUpdateById(eq(account.getId()));
         Account savedAccount = accountService.update(account);
         assertNotNull(savedAccount);
     }
@@ -185,7 +178,7 @@ public class AccountServiceUnitTest extends AbstractUnitTest {
     }
 
     @Test(expected = RestIllegalArgumentException.class)
-    public void updateEntityWithWrongIdTest_shouldThrowsIllegalArgException() {
+    public void updateEntityWithBadIdTest_shouldThrowsIllegalArgException() {
         accountRepository = new AccountRepositoryImpl(null);
         accountService = new AccountService(accountRepository, null, null, null);
         Account account = new Account();
@@ -240,8 +233,8 @@ public class AccountServiceUnitTest extends AbstractUnitTest {
                 account.setId(1L);
                 return Optional.of(account);
             }
-        }).when(accountRepository).findById(Mockito.anyLong());
-        accountService = new AccountService(accountRepository, null, null, null);
+        }).when(accountRepository).findForUpdateById(Mockito.anyLong());
+        accountService = new AccountService(accountRepository, mockEntityManagerTransaction(), null, null);
         Account account = new Account();
         account.setId(1L);
         account.setVersion(1L);
@@ -642,6 +635,36 @@ public class AccountServiceUnitTest extends AbstractUnitTest {
         Transfer transfer = new Transfer(from, to, new BigDecimal("2"), Currency.USD, Currency.EUR, null);
         accountService = new AccountService(accountRepository, mockEntityManagerTransaction(), currencyService, transferRepository);
         accountService.makeTransfer(transfer);
+    }
+
+    @Test
+    public void findTransferByIdTest() {
+        final long generatedAccountId = 1;
+        final long generatedTransferId = 1;
+        transferRepository = mock(TransferRepository.class);
+        doAnswer(invocationOnMock -> {
+            Long accountId = invocationOnMock.getArgument(0);
+            Long transferId = invocationOnMock.getArgument(1);
+            if (transferId == null || transferId <= 0 || accountId == null || accountId <= 0) {
+                return invocationOnMock.callRealMethod();
+            } else {
+                Account account1 = new Account();
+                account1.setAmount(BigDecimal.TEN);
+                account1.setCurrency(Currency.USD);
+                account1.setId(generatedAccountId);
+                Account account2 = new Account();
+                account2.setAmount(BigDecimal.TEN);
+                account2.setCurrency(Currency.EUR);
+                account2.setId(2L);
+                Transfer transfer1 = new Transfer(account1, account2, BigDecimal.TEN, account1.getCurrency(), account2.getCurrency(), BigDecimal.ONE);
+                transfer1.setId(generatedTransferId);
+                return Optional.of(transfer1);
+            }
+        }).when(transferRepository).findTransferByAccountIdAndId(Mockito.anyLong(), anyLong());
+        accountService = new AccountService(accountRepository, null, null, transferRepository);
+        Transfer savedTransfer = accountService.findTransferById(generatedAccountId, generatedTransferId);
+        assertNotNull(savedTransfer);
+        assertEquals(generatedTransferId, (long) savedTransfer.getId());
     }
 
     @Test

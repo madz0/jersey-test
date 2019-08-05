@@ -13,6 +13,7 @@ import javax.persistence.EntityManager;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -82,7 +83,7 @@ class TransferRepositoryImplUnitTest extends AbstractUnitTest {
 
     @Test
     void findAll_wrongPageSize_shouldThrowIllegalArgumentException() {
-        TransferRepository transferRepository = new TransferRepositoryImpl(entityManager);
+        transferRepository = new TransferRepositoryImpl(entityManager);
         int page = 0;
         int pageSize = 0;
         assertThrows(RestIllegalArgumentException.class, () -> transferRepository.findAllByAccountId(1L, page, pageSize));
@@ -90,7 +91,7 @@ class TransferRepositoryImplUnitTest extends AbstractUnitTest {
 
     @Test
     void findAll_ExceptionInCountQuery_shouldThrowDbQueryException() {
-        TransferRepository transferRepository = new TransferRepositoryImpl(entityManager);
+        transferRepository = new TransferRepositoryImpl(entityManager);
         int page = 0;
         int pageSize = 2;
         doThrow(RuntimeException.class).when(entityManager).createQuery(eq("select count (t.id) from Transfer t where t.from.id = :accountId or t.to.id = :accountId"), eq(Long.class));
@@ -99,7 +100,7 @@ class TransferRepositoryImplUnitTest extends AbstractUnitTest {
 
     @Test
     void findAll_ExceptionInListQuery_shouldThrowDbQueryException() {
-        TransferRepository transferRepository = new TransferRepositoryImpl(entityManager);
+        transferRepository = new TransferRepositoryImpl(entityManager);
         int page = 0;
         int pageSize = 2;
         doAnswer(invocationOnMock -> {
@@ -109,5 +110,49 @@ class TransferRepositoryImplUnitTest extends AbstractUnitTest {
         }).when(entityManager).createQuery(eq("select count (t.id) from Transfer t where t.from.id = :accountId or t.to.id = :accountId"), eq(Long.class));
         doThrow(RuntimeException.class).when(entityManager).createQuery(eq("select t from Transfer t where t.from.id = :accountId or t.to.id = :accountId"), eq(Transfer.class));
         assertThrows(DbQueryException.class, () -> transferRepository.findAllByAccountId(1L, page, pageSize));
+    }
+
+    @Test
+    void findTransferByAccountIdAndIdTest() {
+        final long account1Id = 1;
+        final long account2Id = 2;
+        final long account3Id = 3;
+        final long queryAccountId = 1;
+
+        final TypedQueryMocked<Transfer> queryMocked = new TypedQueryMocked<>();
+        doAnswer(invocationOnMock -> {
+            Account account1 = new Account();
+            account1.setAmount(BigDecimal.TEN);
+            account1.setCurrency(Currency.USD);
+            account1.setId(account1Id);
+            Account account2 = new Account();
+            account2.setAmount(BigDecimal.TEN);
+            account2.setCurrency(Currency.EUR);
+            account2.setId(account2Id);
+            Account account3 = new Account();
+            account3.setAmount(BigDecimal.TEN);
+            account3.setCurrency(Currency.EUR);
+            account3.setId(account3Id);
+
+            Transfer transfer1 = new Transfer(account1, account2, BigDecimal.TEN, account1.getCurrency(), account2.getCurrency(), BigDecimal.ONE);
+            transfer1.setId(1L);
+            transfer1.setVersion(0L);
+            queryMocked.setResultSet(Collections.singletonList(transfer1));
+            return queryMocked;
+        }).when(entityManager).createQuery(eq("select t from Transfer t where t.id = :transferId and t.from.id = :accountId"), eq(Transfer.class));
+
+        transferRepository = new TransferRepositoryImpl(entityManager);
+        int page = 0;
+        int pageSize = 2;
+        Optional<Transfer> transferOptional = transferRepository.findTransferByAccountIdAndId(queryAccountId, 1L);
+        assertNotNull(transferOptional);
+        assertTrue(transferOptional.isPresent());
+        assertEquals(1L, transferOptional.get().getId());
+    }
+
+    @Test
+    void findTransferByAccountIdAndId_whenIdsAreNull_illegalException() {
+        transferRepository = new TransferRepositoryImpl(entityManager);
+        assertThrows(RestIllegalArgumentException.class, () -> transferRepository.findTransferByAccountIdAndId(null, null));
     }
 }

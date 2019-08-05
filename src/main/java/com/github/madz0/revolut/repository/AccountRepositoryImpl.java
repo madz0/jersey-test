@@ -51,7 +51,7 @@ public class AccountRepositoryImpl extends AbstractRepository<Account> implement
                 throw new DbQueryException("Failed to execute count query", e);
             }
 
-            if (page * size > totalSize) {
+            if (((long) page) * size > totalSize) {
                 throw new RestIllegalArgumentException("page value is bigger than result set size");
             }
             try {

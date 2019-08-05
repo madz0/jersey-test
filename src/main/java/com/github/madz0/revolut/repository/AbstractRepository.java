@@ -22,9 +22,13 @@ public abstract class AbstractRepository<T extends BaseModel> {
         if (entity.getId() != null && entity.getId() <= 0) {
             throw new RestIllegalArgumentException("Wrong id value for entity " + entity.toString());
         }
+
         EntityTransaction transaction = entityManager.getTransaction();
+        boolean alreadyActive = transaction.isActive();
         try {
-            transaction.begin();
+            if (!alreadyActive) {
+                transaction.begin();
+            }
             if (entity.getId() != null) {
                 T fromDb = (T) entityManager.find(entity.getClass(), entity.getId());
                 if (fromDb == null) {
@@ -36,17 +40,29 @@ public abstract class AbstractRepository<T extends BaseModel> {
             } else {
                 entityManager.persist(entity);
             }
-            transaction.commit();
+            commitTransaction(transaction, alreadyActive);
+            return entity;
         } catch (DataIntegrityException e) {
-            transaction.rollback();
+            rollBackTransaction(transaction, alreadyActive);
             throw e;
         } catch (OptimisticLockException e) {
-            transaction.rollback();
+            rollBackTransaction(transaction, alreadyActive);
             throw new RestConcurrentModificationException("transient entity version =" + entity.getVersion(), "Either version fields was incorrect or a concurrent operation has been occurred", e);
         } catch (Exception e) {
-            transaction.rollback();
+            rollBackTransaction(transaction, alreadyActive);
             throw new DbSaveOperationException(entity.toString(), e);
         }
-        return entity;
+    }
+
+    private void rollBackTransaction(EntityTransaction transaction, boolean alreadyActive) {
+        if (!alreadyActive) {
+            transaction.rollback();
+        }
+    }
+
+    private void commitTransaction(EntityTransaction transaction, boolean alreadyActive) {
+        if (!alreadyActive) {
+            transaction.commit();
+        }
     }
 }

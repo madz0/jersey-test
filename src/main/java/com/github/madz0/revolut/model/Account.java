@@ -22,9 +22,12 @@ public class Account extends BaseModel {
 
     @NotNull(groups = {Create.class, Update.class}, message = "Wrong value for money")
     //We don't let 0 amount even in update
-    @DecimalMin(groups = {Create.class, Update.class}, value = "0.000001", message = "Unsupported value for money")
-    @Digits(groups = {Create.class, Update.class}, integer = MAX_SUPPORTED_MONEY, fraction = MAX_SUPPORTED_MONEY_FRACTION, message = "Unsupported value for money")
-    @Column(columnDefinition = "DECIMAL(" + (MAX_SUPPORTED_MONEY + SUPPORTED_MONEY_SAFE_GUARD) + ", " + MAX_SUPPORTED_MONEY_FRACTION + ")", nullable = false)
+    @DecimalMin(groups = {Create.class, Update.class}, value = "0.000001",
+            message = "Unsupported value for money")
+    @Digits(groups = {Create.class, Update.class}, integer = MAX_SUPPORTED_MONEY,
+            fraction = MAX_SUPPORTED_MONEY_FRACTION, message = "Unsupported value for money")
+    @Column(columnDefinition = "DECIMAL(" + (MAX_SUPPORTED_MONEY + SUPPORTED_MONEY_SAFE_GUARD) +
+            ", " + MAX_SUPPORTED_MONEY_FRACTION + ")", nullable = false)
     private BigDecimal amount;
 
     @JsonGetter("amount")

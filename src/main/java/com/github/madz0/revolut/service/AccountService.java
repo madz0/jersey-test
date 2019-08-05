@@ -23,14 +23,23 @@ import static com.github.madz0.revolut.util.CurrencyUtils.getFractionsCount;
 
 @RequiredArgsConstructor(onConstructor = @__(@Inject))
 public class AccountService {
-    private final static int DEFAULT_PAGE_SIZE = 20;
+    private static final int DEFAULT_PAGE_SIZE = 20;
+    private static final int MAX_PAGE_SIZE = 100;
     private final AccountRepository accountRepository;
     private final EntityManager entityManager;
     private final CurrencyService currencyService;
     private final TransferRepository transferRepository;
 
     public Account findById(Long id) {
-        return accountRepository.findById(id).orElseThrow(() -> new DataIntegrityException(null, "Could not find id " + id));
+        return accountRepository.findById(id).orElseThrow(() ->
+                new DataIntegrityException(null, "Could not find id " + id));
+    }
+
+    public Transfer findTransferById(Long accountId, Long transferId) {
+        return transferRepository.findTransferByAccountIdAndId(accountId, transferId)
+                .orElseThrow(() -> new DataIntegrityException(null,
+                        "Could not find transfer with transferId="
+                                + transferId + " and accountId=" + accountId));
     }
 
     public Account create(Account account) {
@@ -44,20 +53,26 @@ public class AccountService {
         assertAccountBeforeSave(account);
         assertBigDecimalWithAllocatedSize(account.getAmount());
         assertAccountBeforeUpdate(account);
-        Account dbAccount = findById(account.getId());
-        if (account.getCurrency() == null) {
-            account.setCurrency(dbAccount.getCurrency());
-        } else if (dbAccount.getCurrency() != account.getCurrency()) {
-            throw new RestIllegalArgumentException("Currency cannot be changed");
+        EntityTransaction transaction = entityManager.getTransaction();
+        try {
+            transaction.begin();
+            Account dbAccount = accountRepository.findForUpdateById(account.getId()).orElseThrow(() -> new DataIntegrityException(null, "Could not find id " + account.getId()));
+            if (account.getCurrency() == null) {
+                account.setCurrency(dbAccount.getCurrency());
+            } else if (dbAccount.getCurrency() != account.getCurrency()) {
+                throw new RestIllegalArgumentException("Currency cannot be changed");
+            }
+            Account db = accountRepository.save(account);
+            transaction.commit();
+            return db;
+        } catch (Exception e) {
+            transaction.rollback();
+            throw e;
         }
-        return accountRepository.save(account);
     }
 
     public Page<Account> findAll(int page, int pageSize) {
-        if (pageSize == 0) {
-            pageSize = DEFAULT_PAGE_SIZE;
-        }
-        return accountRepository.findAll(page, pageSize);
+        return accountRepository.findAll(page, prepareAnsAssertpageSize(pageSize));
     }
 
     public Page<Account> findAll(int page, int pageSize, Consumer<Account> accountConsumer) {
@@ -101,10 +116,15 @@ public class AccountService {
     }
 
     public Page<Transfer> findAllTransfersByAccountId(Long accountId, int page, int pageSize) {
-        if (pageSize == 0) {
-            pageSize = DEFAULT_PAGE_SIZE;
+        return transferRepository.findAllByAccountId(accountId, page, prepareAnsAssertpageSize(pageSize));
+    }
+
+    public Page<Transfer> findAllTransfersByAccountId(Long accountId, int page, int pageSize, Consumer<Transfer> transferConsumer) {
+        Page<Transfer> transferPage = findAllTransfersByAccountId(accountId, page, pageSize);
+        if (transferConsumer != null) {
+            transferPage.getContents().forEach(transferConsumer);
         }
-        return transferRepository.findAllByAccountId(accountId, page, pageSize);
+        return transferPage;
     }
 
     private Transfer prepareTransferForSave(Transfer transfer, Account from, Account to, BigDecimal exchangeRate) {
@@ -196,5 +216,18 @@ public class AccountService {
                 getFractionsCount(exchangeRate) > Transfer.EXCHANGE_RATE_MAX_FRAGMENTS) {
             throw new RestUnsupportedOperationException("Returned exchange rate was too big " + exchangeRate);
         }
+    }
+
+    private int prepareAnsAssertpageSize(int pageSize) {
+        if (pageSize == 0) {
+            pageSize = DEFAULT_PAGE_SIZE;
+        }
+        if (pageSize < 0) {
+            throw new RestIllegalArgumentException("pageSize is illegal");
+        }
+        if (pageSize > MAX_PAGE_SIZE) {
+            throw new RestIllegalArgumentException("pageSize is too large. Use " + MAX_PAGE_SIZE + " instead");
+        }
+        return pageSize;
     }
 }

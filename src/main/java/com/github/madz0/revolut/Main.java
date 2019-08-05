@@ -25,10 +25,6 @@ public class Main {
     private void start() throws URISyntaxException {
         ServiceLocator locator = ServiceLocatorUtilities.createAndPopulateServiceLocator();
         Properties properties = getProperties();
-        if(properties == null) {
-            log.warn("Creating default empty properties");
-            properties = new Properties();
-        }
         if(!properties.containsKey(APP_URL_KEY)) {
             properties.put(APP_URL_KEY, BASE_URI);
         }

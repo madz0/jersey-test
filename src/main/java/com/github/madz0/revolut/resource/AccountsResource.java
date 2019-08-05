@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 
 import javax.inject.Inject;
 import javax.validation.Valid;
+import javax.validation.constraints.Min;
 import javax.validation.groups.ConvertGroup;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -22,7 +23,6 @@ public class AccountsResource {
     private final AccountService accountService;
 
     @POST
-    @Path("/")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response create(@Valid @ConvertGroup(to = Account.Create.class) Account account) throws URISyntaxException {
@@ -30,9 +30,9 @@ public class AccountsResource {
     }
 
     @GET
-    @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response list(@QueryParam("page") int page, @QueryParam("pageSize") int pageSize) {
+    public Response list(@Min(value = 0, message = "Wrong value for page") @QueryParam("page") int page,
+                         @Min(value = 0, message = "Wrong value for pageSize") @QueryParam("pageSize") int pageSize) {
         return Response.ok(accountService.findAll(page, pageSize, account -> account.setRoundMoney(true))).build();
     }
 
@@ -49,7 +49,9 @@ public class AccountsResource {
     @Path("/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response update(@PathParam("id") Long id, @Valid @ConvertGroup(to = Account.Update.class) Account account) {
+    public Response update(@PathParam("id") Long id,
+                           @Valid @ConvertGroup(to = Account.Update.class)
+                                   Account account) {
         if (id == null || id <= 0) {
             throw new RestIllegalArgumentException("invalid id");
         }
@@ -63,6 +65,32 @@ public class AccountsResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response transfer(@Valid Transfer transfer) throws URISyntaxException {
-        return Response.created(new URI(BASE_PATH + "/" + transfer.getFromAccountId() + "/transfers/" + accountService.makeTransfer(transfer).getId())).build();
+        return Response.created(new URI(BASE_PATH + "/" + transfer.getFromAccountId()
+                + "/transfers/" + accountService.makeTransfer(transfer).getId())).build();
+    }
+
+    @GET
+    @Path("/{accountId}/transfers/{transferId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getTransfer(@Min(value = 1, message = "Wrong value for accountId")
+                                @PathParam("accountId") Long accountId,
+                                @Min(value = 1, message = "Wrong value for transferId")
+                                @PathParam("transferId") Long transferId) {
+        Transfer transfer = accountService.findTransferById(accountId, transferId);
+        transfer.setRoundMoney(true);
+        return Response.ok(transfer).build();
+    }
+
+    @GET
+    @Path("/{id}/transfers")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response listTransactions(@Min(value = 1L, message = "Wrong value for id")
+                                     @PathParam("id") Long id,
+                                     @Min(value = 0, message = "Wrong value for page")
+                                     @QueryParam("page") int page,
+                                     @Min(value = 0, message = "Wrong value for pageSize")
+                                     @QueryParam("pageSize") int pageSize) {
+        return Response.ok(accountService.findAllTransfersByAccountId(id, page, pageSize,
+                transfer -> transfer.setRoundMoney(true))).build();
     }
 }

@@ -221,6 +221,33 @@ public class AccountsResourceValidationResponseIntegrationTest extends JerseyTes
     }
 
     @Test
+    public void transferGet_whenAccountIdLessThanZero_thenBadRequest() {
+        Response response = target(BASE_PATH + "/0/transfers/1").request().get();
+        assertEquals("Http Response should be " + Response.Status.BAD_REQUEST.getStatusCode(),
+                Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        String json = response.readEntity(String.class);
+        assertTrue(json.contains("Wrong value for accountId"));
+    }
+
+    @Test
+    public void transferGet_whenTransferIdLessThanZero_thenBadRequest() {
+        Response response = target(BASE_PATH + "/1/transfers/0").request().get();
+        assertEquals("Http Response should be " + Response.Status.BAD_REQUEST.getStatusCode(),
+                Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        String json = response.readEntity(String.class);
+        assertTrue(json.contains("Wrong value for transferId"));
+    }
+
+    @Test
+    public void transferList_whenIdLessThanZero_thenBadRequest() {
+        Response response = target(BASE_PATH + "/0/transfers").request().get();
+        assertEquals("Http Response should be " + Response.Status.BAD_REQUEST.getStatusCode(),
+                Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        String json = response.readEntity(String.class);
+        assertTrue(json.contains("Wrong value for id"));
+    }
+
+    @Test
     public void update_whenPostTooBigAmount_thenBadRequest() {
         Account account = new Account();
         account.setCurrency(Currency.USD);

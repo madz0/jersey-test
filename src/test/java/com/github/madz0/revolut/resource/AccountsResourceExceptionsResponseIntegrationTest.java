@@ -1,5 +1,6 @@
 package com.github.madz0.revolut.resource;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.madz0.revolut.config.AppConfig;
 import com.github.madz0.revolut.exception.*;
 import com.github.madz0.revolut.model.Account;
@@ -19,6 +20,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.math.BigDecimal;
 
+import static com.github.madz0.revolut.AbstractUnitTest.TestUtils.createProperTransferJson;
 import static com.github.madz0.revolut.resource.AccountsResource.BASE_PATH;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -82,15 +84,16 @@ public class AccountsResourceExceptionsResponseIntegrationTest extends JerseyTes
     }
 
     @Test
-    public void transfer_whenDbQueryException_thenInternalServerErrorAndContainsErrorCode() {
+    public void transfer_whenDbQueryException_thenInternalServerErrorAndContainsErrorCode() throws JsonProcessingException {
         setupForDbQueryExceptionTransfer();
         Account from = new Account();
         from.setId(1L);
         Account to = new Account();
         to.setId(2L);
-        Transfer transfer = new Transfer(from, to, BigDecimal.TEN, Currency.USD, Currency.EUR, null);
+        Transfer transfer = new Transfer(from, to, BigDecimal.TEN, null, null, null);
+
         Response response = target(BASE_PATH + "/transfers").request(MediaType.APPLICATION_JSON_TYPE)
-                .post(Entity.entity(transfer, MediaType.APPLICATION_JSON_TYPE));
+                .post(Entity.json(createProperTransferJson(transfer)));
         assertEquals("Http Response should be " + Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
                 Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
         String json = response.readEntity(String.class);
@@ -98,7 +101,15 @@ public class AccountsResourceExceptionsResponseIntegrationTest extends JerseyTes
     }
 
     @Test
-    public void transfer_whenUncaughtException_thenInternalServerErrorAndContainsErrorCode() {
+    public void getTransfer_whenDataIntegrationException_thenNotFound() {
+        dataIntegrityExceptionGetTransfer();
+        Response response = target(BASE_PATH + "/1/transfers/1").request().get();
+        assertEquals("Http Response should be " + Response.Status.NOT_FOUND.getStatusCode(),
+                Response.Status.NOT_FOUND.getStatusCode(), response.getStatus());
+    }
+
+    @Test
+    public void transfer_whenUncaughtException_thenInternalServerErrorAndContainsErrorCode() throws JsonProcessingException {
         setupForUnCaughtExceptionTransfer();
         Account from = new Account();
         from.setId(1L);
@@ -106,7 +117,7 @@ public class AccountsResourceExceptionsResponseIntegrationTest extends JerseyTes
         to.setId(2L);
         Transfer transfer = new Transfer(from, to, BigDecimal.TEN, Currency.USD, Currency.EUR, null);
         Response response = target(BASE_PATH + "/transfers").request(MediaType.APPLICATION_JSON_TYPE)
-                .post(Entity.entity(transfer, MediaType.APPLICATION_JSON_TYPE));
+                .post(Entity.json(createProperTransferJson(transfer)));
         assertEquals("Http Response should be " + Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
                 Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
         String json = response.readEntity(String.class);
@@ -124,6 +135,10 @@ public class AccountsResourceExceptionsResponseIntegrationTest extends JerseyTes
 
     private void dataIntegrityExceptionGet() {
         doThrow(DataIntegrityException.class).when(accountService).findById(anyLong());
+    }
+
+    private void dataIntegrityExceptionGetTransfer() {
+        doThrow(DataIntegrityException.class).when(accountService).findTransferById(anyLong(), anyLong());
     }
 
     private void setupForConcurrentModificationExUpdate() {
