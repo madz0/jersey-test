@@ -10,7 +10,7 @@ java -jar target/revolut-1.0-SNAPSHOT-shaded.jar
 The server listens to port 9998 by default but it can be changed in `app.properties`
 inside `resources`
 
-Here are sample curl commands to test the service:
+Here are some sample curl commands to test the service:
 
 ```bash
 curl -v -d '{"amount":"10", "currency":"USD"}' -H "Content-Type: application/json" -X POST 'http://localhost:9998/revolut/api/accounts'
@@ -22,8 +22,9 @@ curl -v -X GET http://localhost:9998/revolut/api/accounts/1/transfers/1
 curl -v -X GET 'http://localhost:9998/revolut/api/accounts/1/transfers?page=0&pageSize=10'
 ```
 
-Also there a minimal rest documentation created by jaxrs-analyzer is generated automatically.
-Here is a version provided. While it is not accurate, but may com in handy:
+Also there is a minimal rest documentation created by jaxrs-analyzer which is generated 
+automatically by maven.
+Here is a version provided. While it is not accurate, but may come in handy:
 
 ```
 = REST resources of revolut
@@ -128,7 +129,7 @@ _No body_ +
 
 ## Tests
 
-Tests are split into unit tests and integration tests both are configured 
+Tests are split into unit tests and integration tests and both are configured 
 for different phases.
 
 Unit tests are run in `test` phase and integration tests in `integration-test` phase
