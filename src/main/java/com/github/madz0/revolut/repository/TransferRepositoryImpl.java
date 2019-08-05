@@ -1,5 +1,6 @@
 package com.github.madz0.revolut.repository;
 
+import com.github.madz0.revolut.exception.DataIntegrityException;
 import com.github.madz0.revolut.exception.DbQueryException;
 import com.github.madz0.revolut.exception.RestIllegalArgumentException;
 import com.github.madz0.revolut.model.Transfer;
@@ -7,6 +8,7 @@ import com.github.madz0.revolut.model.Transfer;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
+import javax.persistence.NoResultException;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,9 +22,15 @@ public class TransferRepositoryImpl extends AbstractRepository<Transfer> impleme
     @Override
     public Optional<Transfer> findTransferByAccountIdAndId(Long accountId, Long transferId) {
         assertFindTransferByAccountIdAndIdIllegalArguments(accountId, transferId);
-        return Optional.ofNullable(entityManager.createQuery("select t from Transfer t where t.id = :transferId and t.from.id = :accountId", Transfer.class)
-                .setParameter("transferId", transferId).setParameter("accountId", accountId)
-                .getSingleResult());
+        try {
+            return Optional.ofNullable(entityManager.createQuery("select t from Transfer t where t.id = :transferId and t.from.id = :accountId", Transfer.class)
+                    .setParameter("transferId", transferId).setParameter("accountId", accountId)
+                    .getSingleResult());
+        } catch (NoResultException e) {
+            return Optional.empty();
+        } catch (Exception e) {
+            throw new DbQueryException("accountId=" + accountId + ", transferId=" + transferId, e);
+        }
     }
 
     @Override
@@ -36,6 +44,8 @@ public class TransferRepositoryImpl extends AbstractRepository<Transfer> impleme
                 totalSize = entityManager.createQuery("select count (t.id) from Transfer t where t.from.id = :accountId or t.to.id = :accountId", Long.class)
                         .setParameter("accountId", accountId)
                         .getSingleResult();
+            } catch (NoResultException e) {
+                throw new DataIntegrityException(null, "accountId=" + accountId + " is not found");
             } catch (Exception e) {
                 throw new DbQueryException("Failed to execute count query. accountId = " + accountId, e);
             }
@@ -52,6 +62,8 @@ public class TransferRepositoryImpl extends AbstractRepository<Transfer> impleme
                         .getResultList();
                 transaction.commit();
                 return new Page<>(accounts, totalSize, page, size);
+            } catch (NoResultException e) {
+                throw new DataIntegrityException(null, "accountId=" + accountId + " is not found");
             } catch (Exception e) {
                 throw new DbQueryException("Failed to execute list query. accountId=" + accountId + ", page=" + page + ", size=" + size + ", totalSize=" + totalSize, e);
             }

@@ -1,5 +1,6 @@
 package com.github.madz0.revolut.repository;
 
+import com.github.madz0.revolut.exception.DataIntegrityException;
 import com.github.madz0.revolut.exception.DbQueryException;
 import com.github.madz0.revolut.exception.RestIllegalArgumentException;
 import com.github.madz0.revolut.model.Account;
@@ -8,6 +9,7 @@ import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
 import javax.persistence.LockModeType;
+import javax.persistence.NoResultException;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,6 +29,8 @@ public class AccountRepositoryImpl extends AbstractRepository<Account> implement
         }
         try {
             return Optional.ofNullable(entityManager.find(Account.class, id));
+        } catch (NoResultException e) {
+            return Optional.empty();
         } catch (Exception e) {
             throw new DbQueryException("Failed to execute find query. id=" + id, e);
         }
@@ -47,6 +51,8 @@ public class AccountRepositoryImpl extends AbstractRepository<Account> implement
             transaction.begin();
             try {
                 totalSize = entityManager.createQuery("select count (a.id) from Account a", Long.class).getSingleResult();
+            } catch (NoResultException e) {
+                throw new DataIntegrityException(null, "No entry found");
             } catch (Exception e) {
                 throw new DbQueryException("Failed to execute count query", e);
             }
@@ -62,6 +68,8 @@ public class AccountRepositoryImpl extends AbstractRepository<Account> implement
                         .getResultList();
                 transaction.commit();
                 return new Page<>(accounts, totalSize, page, size);
+            } catch (NoResultException e) {
+                throw new DataIntegrityException(null, "No entry found");
             } catch (Exception e) {
                 throw new DbQueryException("Failed to execute list query. page=" + page + ", size=" + size + ", totalSize=" + totalSize, e);
             }
@@ -78,6 +86,8 @@ public class AccountRepositoryImpl extends AbstractRepository<Account> implement
         }
         try {
             return Optional.ofNullable(entityManager.find(Account.class, id, LockModeType.PESSIMISTIC_WRITE));
+        } catch (NoResultException e) {
+            return Optional.empty();
         } catch (Exception e) {
             throw new DbQueryException("Failed to execute find query. id=" + id, e);
         }
