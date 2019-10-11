@@ -1,4 +1,4 @@
-# Revolut REST API TEST
+# Jersey REST API TEST
 
 ## Build & run
 
