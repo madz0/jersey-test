@@ -5,8 +5,8 @@
              version="2.0" xmlns="http://java.sun.com/xml/ns/persistence">
 
     <persistence-unit name="h2-unit" transaction-type="RESOURCE_LOCAL">
-        <class>com.github.madz0.revolut.model.Account</class>
-        <class>com.github.madz0.revolut.model.Transfer</class>
+        <class>com.github.madz0.jerseytest.model.Account</class>
+        <class>com.github.madz0.jerseytest.model.Transfer</class>
         <properties>
             <property name="javax.persistence.jdbc.driver" value="org.h2.Driver" />
             <property name="javax.persistence.jdbc.url" value="jdbc:h2:mem:test" />
