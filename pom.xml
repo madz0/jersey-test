@@ -14,7 +14,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <jersey.version>2.29</jersey.version>
         <jackson.version>2.10.0.pr1</jackson.version>
-        <checkstyle.latest.version>8.23</checkstyle.latest.version>
+        <checkstyle.latest.version>8.29</checkstyle.latest.version>
     </properties>
     <dependencies>
         <dependency>
