@@ -13,7 +13,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <jersey.version>2.29</jersey.version>
-        <jackson.version>2.10.0.pr1</jackson.version>
+        <jackson.version>2.13.4.1</jackson.version>
         <checkstyle.latest.version>8.23</checkstyle.latest.version>
     </properties>
     <dependencies>
